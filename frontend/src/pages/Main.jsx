@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo } from "react";
 import { FaRegSnowflake, FaTv, FaWind } from "react-icons/fa";
 import { GiWashingMachine, GiVacuumCleaner } from "react-icons/gi";
 import { MdKitchen, MdDevicesOther } from "react-icons/md";
+import { LiaRobotSolid } from "react-icons/lia";
 
 function Main() {
   const navigate = useNavigate();
@@ -197,7 +198,11 @@ function Main() {
   return (
     <Container>
       <Overlay isActive={!isLoggedIn} />
-      <Nav onClick={handleNavClick}>CS Agent</Nav>
+      <Nav>
+        <BlueText onClick={handleReset}>
+          🔎<GrayText>CS </GrayText>Agent
+        </BlueText>
+      </Nav>
       <MainContainer>
         <Sidebar>
           <SidebarContent>
@@ -328,24 +333,22 @@ const Nav = styled.div`
   display: flex;
   align-items: center;
   width: 100%;
-  height: 60px;
-  font-weight: 200;
-  height: 64px;
+  height: 65px;
   padding: 0 32px;
-  color: #1f2937;
   font-size: 24px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  user-select: none;
   background-color: #ffffff;
   border-bottom: 1px solid #e5e7eb;
   padding-left: 80px;
+`;
 
-  &:hover {
-    color: #2563eb;
-  }
+const GrayText = styled.span`
+  color: #64748b;
+`;
+
+const BlueText = styled.span`
+  color: #2563eb;
+  font-weight: 700;
+  cursor: pointer;
 `;
 
 const MainContainer = styled.div`
