@@ -11,6 +11,8 @@ function Main() {
   const handleAuthClick = () => {
     if (!isLoggedIn) {
       navigate("/login");
+    } else {
+      handleLogout();
     }
   };
 
@@ -19,7 +21,9 @@ function Main() {
   const [chatMessages, setChatMessages] = useState([]);
   const [localHistory, setLocalHistory] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem("isLoggedIn") === "true";
+  });
 
   const categories = useMemo(
     () => [
@@ -176,8 +180,9 @@ function Main() {
   }, []);
 
   const handleLogout = useCallback(() => {
-    setIsLoggedIn(!isLoggedIn);
-  }, [isLoggedIn]);
+    localStorage.removeItem("isLoggedIn");
+    setIsLoggedIn(false);
+  }, []);
 
   const handleSourceClick = useCallback(
     (id) => {

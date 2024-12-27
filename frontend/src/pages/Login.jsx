@@ -29,7 +29,11 @@ const Login = () => {
     }
 
     // 관리자 계정 확인
-    if (formData.email === "admin@admin.com" && formData.password === "admin00") {
+    if (
+      formData.email === "admin@admin.com" &&
+      formData.password === "admin00"
+    ) {
+      localStorage.setItem("isLoggedIn", "true");
       navigate("/");
     } else {
       setError("일치하는 계정이 없습니다.");
@@ -65,9 +69,7 @@ const Login = () => {
               />
             </InputWrapper>
             {error && <ErrorMessage>{error}</ErrorMessage>}
-            <LoginButton type="submit">
-              로그인
-            </LoginButton>
+            <LoginButton type="submit">로그인</LoginButton>
           </Form>
         </LoginBox>
       </Container>
@@ -124,7 +126,7 @@ const InputWrapper = styled.div`
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #9CA3AF;
+    color: #9ca3af;
   }
 `;
 
@@ -150,7 +152,7 @@ const Input = styled.input`
 `;
 
 const ErrorMessage = styled.div`
-  color: #EF4444;
+  color: #ef4444;
   font-size: 0.875rem;
   margin-top: 20px;
 `;
