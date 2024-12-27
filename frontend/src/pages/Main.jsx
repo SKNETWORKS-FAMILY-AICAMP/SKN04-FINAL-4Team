@@ -2,9 +2,12 @@ import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { useState, useCallback, useMemo } from "react";
 import { FaRegSnowflake, FaTv, FaWind } from "react-icons/fa";
-import { GiWashingMachine, GiVacuumCleaner } from "react-icons/gi";
-import { MdKitchen, MdDevicesOther } from "react-icons/md";
-import { LiaRobotSolid } from "react-icons/lia";
+import {
+  GiWashingMachine,
+  GiVacuumCleaner,
+  GiLargeDress,
+} from "react-icons/gi";
+import { MdKitchen } from "react-icons/md";
 
 function Main() {
   const navigate = useNavigate();
@@ -25,16 +28,19 @@ function Main() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem("isLoggedIn") === "true";
   });
+  const [searchConfig, setSearchConfig] = useState({
+    requireCategory: 1, // 0: 카테고리 선택 없이 검색 가능, 1: 카테고리 필수
+  });
 
   const categories = useMemo(
     () => [
-      { icon: <FaRegSnowflake />, name: "냉장고" },
-      { icon: <GiWashingMachine />, name: "세탁기" },
-      { icon: <FaWind />, name: "에어컨" },
       { icon: <FaTv />, name: "TV" },
+      { icon: <FaRegSnowflake />, name: "냉장고" },
+      { icon: <GiWashingMachine />, name: "세탁기, 건조기" },
+      { icon: <FaWind />, name: "에어컨, 공기청정기" },
       { icon: <MdKitchen />, name: "주방가전" },
       { icon: <GiVacuumCleaner />, name: "청소기" },
-      { icon: <MdDevicesOther />, name: "기타 가전" },
+      { icon: <GiLargeDress />, name: "드레서" },
     ],
     []
   );
@@ -92,11 +98,12 @@ function Main() {
     []
   );
 
-  const handleNavClick = useCallback(() => {
-    navigate("/");
-  }, [navigate]);
-
   const handleSearch = useCallback(() => {
+    if (searchConfig.requireCategory === 1 && selectedCategory === null) {
+      alert("카테고리를 먼저 선택해주세요.");
+      return;
+    }
+
     if (!inputValue.trim()) return;
 
     const timestamp = new Date();
@@ -140,6 +147,7 @@ function Main() {
     currentChatId,
     createChatMessage,
     createNewChat,
+    searchConfig,
   ]);
 
   const handleKeyPress = useCallback(
@@ -149,17 +157,6 @@ function Main() {
       }
     },
     [inputValue, handleSearch]
-  );
-
-  const handleCategorySelect = useCallback(
-    (index) => {
-      if (currentChatId) {
-        setChatMessages([]);
-        setCurrentChatId(null);
-      }
-      setSelectedCategory(index);
-    },
-    [currentChatId]
   );
 
   const handleHistoryItemClick = useCallback(
@@ -194,6 +191,10 @@ function Main() {
     },
     [sourceDocuments]
   );
+
+  const handleCategoryClick = (category) => {
+    setSelectedCategory(selectedCategory === category ? null : category);
+  };
 
   return (
     <Container>
@@ -236,7 +237,7 @@ function Main() {
               {categories.map((category, index) => (
                 <CategoryButton
                   key={index}
-                  onClick={() => handleCategorySelect(index)}
+                  onClick={() => handleCategoryClick(index)}
                   isSelected={selectedCategory === index}
                 >
                   <IconWrapper isSelected={selectedCategory === index}>
@@ -270,12 +271,19 @@ function Main() {
                 <ResetIcon>↺</ResetIcon>
               </ResetButton>
             </ButtonContainer>
-            <Input
+            <SearchInput
               type="text"
-              placeholder="궁금한 것을 물어보세요"
+              placeholder={
+                searchConfig.requireCategory === 1 && selectedCategory === null
+                  ? "카테고리를 먼저 선택해주세요"
+                  : "검색어를 입력하세요"
+              }
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
+              disabled={
+                searchConfig.requireCategory === 1 && selectedCategory === null
+              }
             />
             <SearchButton onClick={handleSearch}>검색</SearchButton>
           </SearchContainer>
@@ -455,7 +463,7 @@ const IconWrapper = styled.div`
 `;
 
 const CategoryName = styled.span`
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   color: #1f2937;
 `;
@@ -569,29 +577,6 @@ const LogoutButton = styled.button`
   &:hover {
     background-color: ${(props) => (props.isLoggedIn ? "#475569" : "#fecaca")};
     transform: translateY(-1px);
-  }
-`;
-
-const Input = styled.input`
-  width: 500px;
-  height: 48px;
-  padding: 0 20px;
-  font-size: 15px;
-  color: #334155;
-  background-color: #f8fafc;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  transition: all 0.2s ease;
-  margin-right: 16px;
-
-  &:focus {
-    background-color: #ffffff;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-  }
-
-  &::placeholder {
-    color: #94a3b8;
   }
 `;
 
@@ -730,7 +715,7 @@ const SelectedCategory = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
   color: #1f2937;
   margin-bottom: 24px;
@@ -755,4 +740,32 @@ const Overlay = styled.div`
   z-index: 999;
   pointer-events: ${(props) => (props.isActive ? "auto" : "none")};
   opacity: ${(props) => (props.isActive ? 1 : 0)};
+`;
+
+const SearchInput = styled.input`
+  width: 500px;
+  height: 48px;
+  padding: 0 20px;
+  font-size: 15px;
+  color: #334155;
+  background-color: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  margin-right: 16px;
+
+  &:focus {
+    background-color: #ffffff;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  &::placeholder {
+    color: #94a3b8;
+  }
+
+  &:disabled {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+  }
 `;
