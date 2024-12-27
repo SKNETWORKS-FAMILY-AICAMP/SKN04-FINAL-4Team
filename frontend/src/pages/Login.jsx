@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import styled from "styled-components";
+import styled, { createGlobalStyle } from "styled-components";
+import { FaUser, FaLock } from "react-icons/fa";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -27,83 +28,85 @@ const Login = () => {
       return;
     }
 
-    try {
-      console.log("로그인 시도:", formData);
+    // 관리자 계정 확인
+    if (formData.email === "admin@admin.com" && formData.password === "admin00") {
       navigate("/");
-    } catch (err) {
-      setError("로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.");
+    } else {
+      setError("일치하는 계정이 없습니다.");
     }
   };
 
   return (
-    <Container>
-      <FormWrapper>
-        <Title>Login</Title>
-        <Form onSubmit={handleSubmit}>
-          {error && <ErrorMessage>{error}</ErrorMessage>}
+    <>
+      <GlobalStyle />
+      <Container>
+        <LoginBox>
+          <Title>Login</Title>
+          <Form onSubmit={handleSubmit}>
+            <InputWrapper>
+              <FaUser className="icon" />
+              <Input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="사내 이메일을 입력하세요"
+              />
+            </InputWrapper>
 
-          <InputGroup>
-            <Label>이메일</Label>
-            <Input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="사내 이메일을 입력하세요"
-            />
-          </InputGroup>
-
-          <InputGroup>
-            <Label>비밀번호</Label>
-            <Input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="비밀번호를 입력하세요"
-            />
-          </InputGroup>
-
-          <Button type="submit" onClick={() => navigate("/main")}>
-            로그인
-          </Button>
-
-          <SignUpLink onClick={() => navigate("/signup")}>
-            계정이 없으신가요? 회원가입하기
-          </SignUpLink>
-        </Form>
-      </FormWrapper>
-    </Container>
+            <InputWrapper>
+              <FaLock className="icon" />
+              <Input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="비밀번호를 입력하세요"
+              />
+            </InputWrapper>
+            {error && <ErrorMessage>{error}</ErrorMessage>}
+            <LoginButton type="submit">
+              로그인
+            </LoginButton>
+          </Form>
+        </LoginBox>
+      </Container>
+    </>
   );
 };
 
-const Container = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  min-height: 100vh;
-  background-color: #f8fafc;
-  position: relative;
-  padding-right: 15%;
+const GlobalStyle = createGlobalStyle`
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+  }
 `;
 
-const FormWrapper = styled.div`
-  background-color: white;
-  padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+const Container = styled.div`
+  box-sizing: border-box;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #ffffff;
+`;
+
+const LoginBox = styled.div`
   width: 100%;
   max-width: 400px;
-  margin-left: 2rem;
+  padding: 0 0 20px 0;
+  text-align: center;
 `;
 
 const Title = styled.h1`
-  position: absolute;
-  left: 15%;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #333;
-  font-size: 3rem;
+  font-size: 50px;
+  color: #2563eb;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 50px;
 `;
 
 const Form = styled.form`
@@ -112,58 +115,62 @@ const Form = styled.form`
   gap: 1rem;
 `;
 
-const InputGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-`;
+const InputWrapper = styled.div`
+  position: relative;
+  width: 100%;
 
-const Label = styled.label`
-  font-weight: bold;
-  color: #333;
+  .icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9CA3AF;
+  }
 `;
 
 const Input = styled.input`
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
+  width: 100%;
+  height: 48px;
+  padding: 0 40px;
+  font-size: 15px;
+  color: #334155;
+  background-color: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
 
   &:focus {
-    outline: none;
-    border-color: #0066ff;
+    background-color: #ffffff;
+  }
+
+  &::placeholder {
+    color: #94a3b8;
   }
 `;
 
 const ErrorMessage = styled.div`
-  color: red;
-  text-align: center;
-  margin-bottom: 1rem;
+  color: #EF4444;
+  font-size: 0.875rem;
+  margin-top: 20px;
 `;
 
-const Button = styled.button`
-  padding: 0.8rem;
-  background-color: #0066ff;
+const LoginButton = styled.button`
+  width: 100%;
+  height: 48px;
+  padding: 0;
+  margin-top: 20px;
+  font-size: 15px;
+  background-color: #2563eb;
   color: white;
   border: none;
-  border-radius: 4px;
-  font-size: 1rem;
+  border-radius: 12px;
+  font-weight: 500;
   cursor: pointer;
-  margin-top: 1rem;
+  transition: all 0.2s ease;
 
   &:hover {
-    background-color: #0052cc;
-  }
-`;
-
-const SignUpLink = styled.p`
-  text-align: center;
-  color: #0066ff;
-  cursor: pointer;
-  margin-top: 1rem;
-
-  &:hover {
-    text-decoration: underline;
+    background-color: #1d4ed8;
   }
 `;
 

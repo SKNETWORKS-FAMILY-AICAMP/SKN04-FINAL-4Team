@@ -8,6 +8,12 @@ import { MdKitchen, MdDevicesOther } from "react-icons/md";
 function Main() {
   const navigate = useNavigate();
 
+  const handleAuthClick = () => {
+    if (!isLoggedIn) {
+      navigate("/login");
+    }
+  };
+
   const [inputValue, setInputValue] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
@@ -204,7 +210,7 @@ function Main() {
               </HistoryItem>
             ))}
           </SidebarContent>
-          <LogoutButton onClick={handleLogout} isLoggedIn={isLoggedIn}>
+          <LogoutButton onClick={handleAuthClick} isLoggedIn={isLoggedIn}>
             {isLoggedIn ? "로그아웃" : "로그인"}
           </LogoutButton>
         </Sidebar>
