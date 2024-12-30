@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { FaRegSnowflake, FaTv, FaWind } from "react-icons/fa";
 import { MdKitchen } from "react-icons/md";
 import {
@@ -109,10 +109,6 @@ function Main() {
     if (!inputValue.trim()) return;
 
     const timestamp = new Date();
-    const questionText =
-      selectedCategory !== null
-        ? `[${categories[selectedCategory].name}] ${inputValue}`
-        : inputValue;
 
     const { question, answer } = createChatMessage(
       <QuestionWithCategory>
@@ -178,7 +174,22 @@ function Main() {
   const handleHistoryItemClick = useCallback(
     (item) => {
       setCurrentChatId(item.id);
-      setChatMessages(item.messages);
+      const formattedMessages = item.messages.map((message) => {
+        if (message.type === "question") {
+          const content =
+            typeof message.content === "object"
+              ? message.content.props.children[1]
+              : message.content;
+
+          return {
+            ...message,
+            content: content,
+          };
+        }
+        return message;
+      });
+
+      setChatMessages(formattedMessages);
       const categoryIndex = categories.findIndex(
         (cat) => cat.name === item.category
       );
@@ -196,6 +207,11 @@ function Main() {
   const handleLogout = useCallback(() => {
     localStorage.removeItem("isLoggedIn");
     setIsLoggedIn(false);
+    setChatMessages([]);
+    setLocalHistory([]);
+    setSelectedCategory(null);
+    setInputValue("");
+    setCurrentChatId(null);
   }, []);
 
   const handleSourceClick = useCallback(
@@ -211,6 +227,21 @@ function Main() {
   const handleCategoryClick = (category) => {
     setSelectedCategory(selectedCategory === category ? null : category);
   };
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      const savedHistory = localStorage.getItem("chatHistory");
+      if (savedHistory) {
+        setLocalHistory(JSON.parse(savedHistory));
+      }
+    }
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (isLoggedIn && localHistory.length > 0) {
+      localStorage.setItem("chatHistory", JSON.stringify(localHistory));
+    }
+  }, [localHistory, isLoggedIn]);
 
   return (
     <Container>
@@ -281,7 +312,16 @@ function Main() {
                   const answer = chatMessages[index + 1];
                   return (
                     <ChatItem key={index}>
-                      <QuestionText>{message.content}</QuestionText>
+                      <QuestionText>
+                        {selectedCategory !== null && (
+                          <CategoryTag>
+                            {categories[selectedCategory].name}
+                          </CategoryTag>
+                        )}
+                        {typeof message.content === "object"
+                          ? message.content.props.children[1]
+                          : message.content}
+                      </QuestionText>
                       <AnswerText>{answer.content}</AnswerText>
                     </ChatItem>
                   );
