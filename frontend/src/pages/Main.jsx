@@ -130,7 +130,7 @@ function Main() {
       const newChat = createNewChat(
         newChatId,
         selectedCategory !== null ? categories[selectedCategory].name : "",
-        questionText,
+        inputValue,
         updatedMessages,
         timestamp
       );
@@ -223,15 +223,24 @@ function Main() {
       <MainContainer>
         <Sidebar>
           <SidebarContent>
-            <HistoryTitle>이전 기록</HistoryTitle>
+            <HistoryTitle>HISTORY</HistoryTitle>
             {localHistory.map((chat) => (
               <HistoryItem
                 key={chat.id}
                 onClick={() => handleHistoryItemClick(chat)}
                 active={chat.id === currentChatId}
               >
-                <HistoryQuestion>{chat.firstQuestion}</HistoryQuestion>
-                <HistoryTime>
+                <HistoryQuestion>
+                  {chat.category && (
+                    <HistoryCategory active={chat.id === currentChatId}>
+                      {chat.category}
+                    </HistoryCategory>
+                  )}
+                  <HistoryQuestionText active={chat.id === currentChatId}>
+                    {chat.firstQuestion}
+                  </HistoryQuestionText>
+                </HistoryQuestion>
+                <HistoryTime active={chat.id === currentChatId}>
                   {new Date(chat.timestamp).toLocaleTimeString()}
                 </HistoryTime>
               </HistoryItem>
@@ -453,7 +462,8 @@ const CategoryButton = styled.button`
   display: flex;
   align-items: center;
   padding: 16px;
-  background-color: ${(props) => (props.isSelected ? "#EBF5FF" : "#f8fafc")};
+  background-color: #ffffff;
+  //background-color: ${(props) => (props.isSelected ? "#EBF5FF" : "#f8fafc")};
   border: 1px solid ${(props) => (props.isSelected ? "#2563eb" : "#e2e8f0")};
   border-radius: 12px;
   cursor: pointer;
@@ -498,7 +508,6 @@ const QuestionText = styled.div`
   color: #1f2937;
   margin-bottom: 16px;
   line-height: 1.5;
-  font-weight: 600;
 
   &:before {
     content: "Q.";
@@ -532,12 +541,14 @@ const Sidebar = styled.div`
   background-color: #f8fafc;
   border-right: 1px solid #e2e8f0;
   position: relative;
+  align-items: center;
+  justify-content: center;
 `;
 
 const SidebarContent = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: 12px 24px 0 24px;
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -555,17 +566,20 @@ const SidebarContent = styled.div`
 `;
 
 const HistoryTitle = styled.div`
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #1f2937;
-  margin-bottom: 20px;
   padding-bottom: 12px;
+  padding-left: 90px;
+  padding-right: 90px;
+  margin-bottom: 20px;
   border-bottom: 1px solid #e2e8f0;
 `;
 
 const HistoryItem = styled.div`
   padding: 16px;
-  background-color: ${(props) => (props.active ? "#EBF5FF" : "#ffffff")};
+  background-color: #ffffff;
+  // background-color: ${(props) => (props.active ? "#f8fbff" : "#ffffff")};
   border: 1px solid ${(props) => (props.active ? "#2563eb" : "#e2e8f0")};
   border-radius: 8px;
   margin-bottom: 12px;
@@ -590,8 +604,7 @@ const LogoutButton = styled.button`
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-bottom: 40px;
-  margin-left: 30px;
+  margin: 30px 0;
   position: relative;
   z-index: 1000;
 
@@ -655,10 +668,20 @@ const ResetIcon = styled.span`
 
 const HistoryQuestion = styled.div`
   font-size: 14px;
-  font-weight: 500;
   color: #1f2937;
   margin-bottom: 8px;
   line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const HistoryQuestionText = styled.div`
+  font-weight: ${(props) => (props.active ? "600" : "400")};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 220px;
 `;
 
 const HistoryTime = styled.div`
@@ -805,4 +828,15 @@ const CategoryTag = styled.span`
   font-size: 14px;
   font-weight: 600;
   margin-right: 8px;
+`;
+
+const HistoryCategory = styled.span`
+  background-color: #ebf5ff;
+  color: #2563eb;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: ${(props) => (props.active ? "600" : "400")};
+  width: fit-content;
+  display: inline-block;
 `;
