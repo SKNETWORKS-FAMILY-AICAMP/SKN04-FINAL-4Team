@@ -25,12 +25,10 @@ function Main() {
   const [chatMessages, setChatMessages] = useState([]);
   const [localHistory, setLocalHistory] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem("isLoggedIn") === "true";
-  });
-  const [searchConfig, setSearchConfig] = useState({
-    requireCategory: 1, // 0: 카테고리 선택 없이 검색 가능, 1: 카테고리 필수
-  });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const searchConfig = {
+    requireCategory: 1,
+  };
 
   const categories = useMemo(
     () => [
@@ -228,14 +226,33 @@ function Main() {
     setSelectedCategory(selectedCategory === category ? null : category);
   };
 
+  const handleDeleteHistory = useCallback(
+    (chatId, e) => {
+      e.stopPropagation();
+
+      const updatedHistory = localHistory.filter((chat) => chat.id !== chatId);
+      setLocalHistory(updatedHistory);
+      localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
+
+      if (chatId === currentChatId) {
+        setChatMessages([]);
+        setCurrentChatId(null);
+      }
+    },
+    [localHistory, currentChatId]
+  );
+
   useEffect(() => {
-    if (isLoggedIn) {
+    const loginStatus = localStorage.getItem("isLoggedIn") === "true";
+    setIsLoggedIn(loginStatus);
+
+    if (loginStatus) {
       const savedHistory = localStorage.getItem("chatHistory");
       if (savedHistory) {
         setLocalHistory(JSON.parse(savedHistory));
       }
     }
-  }, [isLoggedIn]);
+  }, []);
 
   useEffect(() => {
     if (isLoggedIn && localHistory.length > 0) {
@@ -261,12 +278,19 @@ function Main() {
                 onClick={() => handleHistoryItemClick(chat)}
                 active={chat.id === currentChatId}
               >
-                <HistoryQuestion>
+                <HeaderRow>
                   {chat.category && (
                     <HistoryCategory active={chat.id === currentChatId}>
                       {chat.category}
                     </HistoryCategory>
                   )}
+                  <DeleteButton
+                    onClick={(e) => handleDeleteHistory(chat.id, e)}
+                  >
+                    ×
+                  </DeleteButton>
+                </HeaderRow>
+                <HistoryQuestion>
                   <HistoryQuestionText active={chat.id === currentChatId}>
                     {chat.firstQuestion}
                   </HistoryQuestionText>
@@ -879,4 +903,25 @@ const HistoryCategory = styled.span`
   font-weight: ${(props) => (props.active ? "600" : "400")};
   width: fit-content;
   display: inline-block;
+`;
+
+const DeleteButton = styled.button`
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  margin-left: auto;
+
+  &:hover {
+    color: #ef4444;
+  }
+`;
+
+const HeaderRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
 `;
