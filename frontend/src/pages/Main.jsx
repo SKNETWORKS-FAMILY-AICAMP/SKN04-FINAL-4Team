@@ -1,13 +1,13 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { FaRegSnowflake, FaTv, FaWind } from "react-icons/fa";
+import { MdKitchen } from "react-icons/md";
 import {
   GiWashingMachine,
   GiVacuumCleaner,
   GiLargeDress,
 } from "react-icons/gi";
-import { MdKitchen } from "react-icons/md";
 
 function Main() {
   const navigate = useNavigate();
@@ -79,11 +79,11 @@ function Main() {
       },
       answer: {
         type: "answer",
-        content: `"${questionText}"에 대한 답변입니다.`,
+        content: `"${inputValue}"에 대한 답변입니다.`,
         timestamp,
       },
     }),
-    []
+    [inputValue]
   );
 
   // 새로운 채팅방 생성
@@ -97,6 +97,8 @@ function Main() {
     }),
     []
   );
+
+  const scrollRef = useRef(null);
 
   const handleSearch = useCallback(() => {
     if (searchConfig.requireCategory === 1 && selectedCategory === null) {
@@ -112,7 +114,15 @@ function Main() {
         ? `[${categories[selectedCategory].name}] ${inputValue}`
         : inputValue;
 
-    const { question, answer } = createChatMessage(questionText, timestamp);
+    const { question, answer } = createChatMessage(
+      <QuestionWithCategory>
+        {selectedCategory !== null && (
+          <CategoryTag>{categories[selectedCategory].name}</CategoryTag>
+        )}
+        {inputValue}
+      </QuestionWithCategory>,
+      timestamp
+    );
     const updatedMessages = [...chatMessages, question, answer];
 
     if (!currentChatId) {
@@ -139,6 +149,12 @@ function Main() {
 
     setChatMessages(updatedMessages);
     setInputValue("");
+
+    setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    }, 100);
   }, [
     inputValue,
     selectedCategory,
@@ -226,7 +242,7 @@ function Main() {
           </LogoutButton>
         </Sidebar>
         <ContentContainer>
-          <ScrollableContent>
+          <ScrollableContent ref={scrollRef}>
             {selectedCategory !== null && (
               <SelectedCategory>
                 <CategoryIcon>{categories[selectedCategory].icon}</CategoryIcon>
@@ -410,7 +426,7 @@ const CategoryGrid = styled.div`
 
 const ChatContainer = styled.div`
   flex: 1;
-  margin-bottom: 24px;
+  margin-top: 20px;
   max-width: 900px;
   margin-left: auto;
   margin-right: auto;
@@ -482,13 +498,18 @@ const QuestionText = styled.div`
   color: #1f2937;
   margin-bottom: 16px;
   line-height: 1.5;
-  font-weight: 500;
+  font-weight: 600;
 
   &:before {
-    content: "Q. ";
+    content: "Q.";
     color: #2563eb;
     font-weight: 600;
+    margin-right: 8px;
   }
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
 `;
 
 const AnswerText = styled.div`
@@ -768,4 +789,20 @@ const SearchInput = styled.input`
     background-color: #f3f4f6;
     cursor: not-allowed;
   }
+`;
+
+const QuestionWithCategory = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const CategoryTag = styled.span`
+  background-color: #ebf5ff;
+  color: #2563eb;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-right: 8px;
 `;
