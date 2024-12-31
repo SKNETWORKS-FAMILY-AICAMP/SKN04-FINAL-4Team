@@ -1,13 +1,18 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { FaRegSnowflake, FaTv, FaWind } from "react-icons/fa";
-import { MdKitchen } from "react-icons/md";
 import {
-  GiWashingMachine,
-  GiVacuumCleaner,
-  GiLargeDress,
-} from "react-icons/gi";
+  FaMoneyBillWave,
+  FaIndustry,
+  FaGraduationCap,
+  FaShieldAlt,
+  FaUserTie,
+  FaTractor,
+  FaHeartbeat,
+  FaTree,
+  FaRoad,
+  FaEllipsisH,
+} from "react-icons/fa";
 
 function Main() {
   const navigate = useNavigate();
@@ -32,13 +37,16 @@ function Main() {
 
   const categories = useMemo(
     () => [
-      { icon: <FaTv />, name: "TV" },
-      { icon: <FaRegSnowflake />, name: "냉장고" },
-      { icon: <GiWashingMachine />, name: "세탁기, 건조기" },
-      { icon: <FaWind />, name: "에어컨, 공기청정기" },
-      { icon: <MdKitchen />, name: "주방가전" },
-      { icon: <GiVacuumCleaner />, name: "청소기" },
-      { icon: <GiLargeDress />, name: "드레서" },
+      { icon: <FaMoneyBillWave />, name: "기획재정･금융･공정거래" },
+      { icon: <FaIndustry />, name: "산업통상자원･중소기업" },
+      { icon: <FaGraduationCap />, name: "교육･여성가족･문화체육관광" },
+      { icon: <FaShieldAlt />, name: "국방･국가보훈" },
+      { icon: <FaUserTie />, name: "행정자치･인사･안전" },
+      { icon: <FaTractor />, name: "농림축산･산림･해양수산" },
+      { icon: <FaHeartbeat />, name: "보건복지･식품의약품" },
+      { icon: <FaTree />, name: "환경･고용노동" },
+      { icon: <FaRoad />, name: "국토교통" },
+      { icon: <FaEllipsisH />, name: "기타" },
     ],
     []
   );
@@ -510,11 +518,10 @@ const SearchContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 95%;
+  gap: 16px;
+  width: fit-content;
+  margin: 0 auto;
   padding: 24px;
-  gap: 8px;
-  background-color: #ffffff;
-  border-top: 1px solid #e2e8f0;
 `;
 
 const ButtonContainer = styled.div`
@@ -581,7 +588,8 @@ const QuestionText = styled.div`
   }
 
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 8px;
 `;
 
@@ -860,7 +868,6 @@ const SearchInput = styled.input`
   border: 2px solid #e2e8f0;
   border-radius: 12px;
   transition: all 0.2s ease;
-  margin-right: 16px;
 
   &:focus {
     background-color: #ffffff;
@@ -892,6 +899,7 @@ const CategoryTag = styled.span`
   font-size: 14px;
   font-weight: 600;
   margin-right: 8px;
+  flex-shrink: 0;
 `;
 
 const HistoryCategory = styled.span`
