@@ -285,7 +285,10 @@ function Main() {
       <MainContainer>
         <Sidebar>
           <SidebarContent>
-            <Title>HISTORY</Title>
+            <TitleContainer>
+              <Title>HISTORY</Title>
+            </TitleContainer>
+
             {localHistory.map((chat) => (
               <HistoryItem
                 key={chat.id}
@@ -394,7 +397,10 @@ function Main() {
         {chatMessages.length > 0 && (
           <SourceSidebar>
             <SourceContent>
-              <Title>답변 출처</Title>
+              <TitleContainer>
+                <Title>답변 출처</Title>
+              </TitleContainer>
+
               {sourceDocuments.map((doc) => (
                 <SourceItem
                   key={doc.id}
@@ -655,11 +661,15 @@ const Title = styled.div`
   font-size: 16px;
   font-weight: 600;
   color: #1f2937;
-  padding-bottom: 12px;
-  padding-left: 90px;
-  padding-right: 90px;
+  padding: 0 40px 12px 40px;
   margin-bottom: 20px;
   border-bottom: 1px solid #e2e8f0;
+`;
+
+const TitleContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const HistoryItem = styled.div`
