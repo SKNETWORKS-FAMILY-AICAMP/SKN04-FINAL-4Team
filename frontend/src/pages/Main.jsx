@@ -31,6 +31,7 @@ function Main() {
   const [localHistory, setLocalHistory] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [hoveredDoc, setHoveredDoc] = useState(null);
   const searchConfig = {
     requireCategory: 1,
   };
@@ -55,21 +56,18 @@ function Main() {
     () => [
       {
         id: 1,
-        title: "냉장고 사용설명서.pdf",
-        link: "https://www.lge.co.kr/",
-        pages: "p.15-18",
+        title: "고등교육법 시행령",
+        link: "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EA%B3%A0%EB%93%B1%EA%B5%90%EC%9C%A1%EB%B2%95%EC%8B%9C%ED%96%89%EB%A0%B9",
       },
       {
         id: 2,
-        title: "세탁기 매뉴얼.pdf",
-        link: "https://www.lge.co.kr/",
-        pages: "p.23-25",
+        title: "학교폭력예방 및 대책에 관한 법률",
+        link: "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%ED%95%99%EA%B5%90%ED%8F%AD%EB%A0%A5%EC%98%88%EB%B0%A9%EB%B0%8F%EB%8C%80%EC%B1%85%EC%97%90%EA%B4%80%ED%95%9C%EB%B2%95%EB%A5%A0",
       },
       {
         id: 3,
-        title: "에어컨 설치 가이드.pdf",
-        link: "https://www.lge.co.kr/",
-        pages: "p.45-48",
+        title: "지방교육자치에 관한 법률",
+        link: "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EC%A7%80%EB%B0%A9%EA%B5%90%EC%9C%A1%EC%9E%90%EC%B9%98%EC%97%90%EA%B4%80%ED%95%9C%EB%B2%95%EB%A5%A0",
       },
     ],
     []
@@ -250,6 +248,14 @@ function Main() {
     [localHistory, currentChatId]
   );
 
+  const handleMouseEnter = (doc) => {
+    setHoveredDoc(doc);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredDoc(null);
+  };
+
   useEffect(() => {
     const loginStatus = localStorage.getItem("isLoggedIn") === "true";
     setIsLoggedIn(loginStatus);
@@ -279,7 +285,7 @@ function Main() {
       <MainContainer>
         <Sidebar>
           <SidebarContent>
-            <HistoryTitle>HISTORY</HistoryTitle>
+            <Title>HISTORY</Title>
             {localHistory.map((chat) => (
               <HistoryItem
                 key={chat.id}
@@ -387,12 +393,13 @@ function Main() {
         </ContentContainer>
         {chatMessages.length > 0 && (
           <SourceSidebar>
-            <SourceTitle>답변 출처</SourceTitle>
             <SourceContent>
+              <Title>답변 출처</Title>
               {sourceDocuments.map((doc) => (
                 <SourceItem
                   key={doc.id}
-                  onClick={() => handleSourceClick(doc.id)}
+                  onMouseEnter={() => handleMouseEnter(doc)}
+                  onMouseLeave={handleMouseLeave}
                 >
                   <SourceName>{doc.title}</SourceName>
                   <SourcePages>{doc.pages}</SourcePages>
@@ -403,6 +410,13 @@ function Main() {
                   >
                     원문 링크 이동
                   </SourceLink>
+                  {hoveredDoc && hoveredDoc.id === doc.id && (
+                    <PreviewIframe
+                      src={doc.link}
+                      isVisible={true}
+                      title="preview"
+                    />
+                  )}
                 </SourceItem>
               ))}
             </SourceContent>
@@ -637,7 +651,7 @@ const SidebarContent = styled.div`
   }
 `;
 
-const HistoryTitle = styled.div`
+const Title = styled.div`
   font-size: 16px;
   font-weight: 600;
   color: #1f2937;
@@ -770,14 +784,6 @@ const SourceSidebar = styled.div`
   flex-direction: column;
 `;
 
-const SourceTitle = styled.div`
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
-  padding: 24px;
-  border-bottom: 1px solid #e2e8f0;
-`;
-
 const SourceContent = styled.div`
   flex: 1;
   overflow-y: auto;
@@ -797,6 +803,7 @@ const SourceItem = styled.div`
     border-color: #2563eb;
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+    font-weight: 600;
   }
 `;
 
@@ -804,7 +811,7 @@ const SourceName = styled.div`
   font-size: 14px;
   font-weight: 500;
   color: #1f2937;
-  margin-bottom: 8px;
+  margin: 0 5px 8px 5px;
 `;
 
 const SourcePages = styled.div`
@@ -823,7 +830,6 @@ const SourceLink = styled.a`
 
   &:hover {
     background-color: #ebf5ff;
-    text-decoration: underline;
   }
 `;
 
@@ -932,4 +938,16 @@ const HeaderRow = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+`;
+
+const PreviewIframe = styled.iframe`
+  position: absolute;
+  top: 100%;
+  left: -10px;
+  width: 280px;
+  height: 200px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
 `;
