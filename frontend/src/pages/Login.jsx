@@ -2,11 +2,33 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled, { createGlobalStyle } from "styled-components";
 import { FaUser, FaLock } from "react-icons/fa";
+import axios from 'axios';
+
+
+const API_URL = process.env.REACT_APP_API_SERVER;
+export const login = async (username, password) => {
+  try {
+    const response = await axios.post(`${API_URL}/token/`, {
+      username,
+      password,
+    });
+    const { access, refresh } = response.data;
+
+    // 토큰 저장
+    localStorage.setItem('accessToken', access);
+    localStorage.setItem('refreshToken', refresh);
+
+    return true; // 로그인 성공
+  } catch (error) {
+    console.error('Login failed:', error);
+    return false; // 로그인 실패
+  }
+};
 
 const Login = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: "",
+    user: "",
     password: "",
   });
   const [error, setError] = useState("");
@@ -23,21 +45,30 @@ const Login = () => {
     e.preventDefault();
     setError("");
 
-    if (!formData.email || !formData.password) {
+    if (!formData.user || !formData.password) {
       setError("모든 필드를 입력해주세요.");
       return;
     }
 
-    // 관리자 계정 확인
-    if (
-      formData.email === "admin@admin.com" &&
-      formData.password === "admin00"
-    ) {
+    const success = await login(formData.user, formData.password);
+    if (success) {
+      alert('로그인 되었습니다.');
       localStorage.setItem("isLoggedIn", "true");
       navigate("/");
     } else {
-      setError("일치하는 계정이 없습니다.");
+      alert('로그인 실패.');
     }
+    
+    // // 관리자 계정 확인
+    // if (
+    //   formData.email === "admin@admin.com" &&
+    //   formData.password === "admin00"
+    // ) {
+    //   localStorage.setItem("isLoggedIn", "true");
+    //   navigate("/");
+    // } else {
+    //   setError("일치하는 계정이 없습니다.");
+    // }
   };
 
   return (
@@ -50,11 +81,11 @@ const Login = () => {
             <InputWrapper>
               <FaUser className="icon" />
               <Input
-                type="email"
-                name="email"
-                value={formData.email}
+                type="user"
+                name="user"
+                value={formData.user}
                 onChange={handleChange}
-                placeholder="사내 이메일을 입력하세요"
+                placeholder="사내 ID를 입력하세요"
               />
             </InputWrapper>
 

@@ -235,6 +235,9 @@ function Main() {
   // 로그아웃
   const handleLogout = useCallback(() => {
     localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    alert('로그아웃 되었습니다.');
     setIsLoggedIn(false);
     setChatMessages([]);
     setLocalHistory([]);
