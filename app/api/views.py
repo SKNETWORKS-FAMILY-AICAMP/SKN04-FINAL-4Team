@@ -9,6 +9,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 # Create your views here.
 from sllm_poject.settings import DEBUG
+from rest_framework_simplejwt.views import TokenObtainPairView
+
 
 class HistoryList(generics.ListAPIView):
     if DEBUG:
@@ -39,3 +41,8 @@ class HistoryList(generics.ListAPIView):
         history = get_object_or_404(DialogHistory, pk=pk)
         history.delete()
         return Response({"message": "삭제되었습니다."}, status=status.HTTP_204_NO_CONTENT)
+    
+
+
+class UserTokenObtainPairView(TokenObtainPairView):
+    pass
