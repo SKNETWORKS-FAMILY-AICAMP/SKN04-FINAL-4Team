@@ -19,6 +19,7 @@ import {
   FaRoad,
   FaEllipsisH,
 } from "react-icons/fa";
+import axios from "axios";
 
 import NavBar from "../components/NavBar";
 import HistorySidebar from "../components/Sidebar";
@@ -40,7 +41,7 @@ function Main() {
 
   // 검색 조건 (0일 땐 카테고리 선택 없이도 검색 가능)
   const searchConfig = {
-    requireCategory: 1,
+    requireCategory: 0,
   };
 
   // 카테고리 목록
@@ -106,18 +107,84 @@ function Main() {
     }),
     [inputValue]
   );
-
+ 
   // 새로운 채팅방 생성
   const createNewChat = useCallback(
-    (chatId, category, question, messages, timestamp) => ({
+    (chatId, author, title, messages) => ({
       id: chatId,
-      category,
-      firstQuestion: question,
-      messages,
-      timestamp,
+      author,
+      title,
+      data:messages
     }),
     []
   );
+
+  const postHistory = async (title, content) => {
+    try {
+      const API_URL = process.env.REACT_APP_API_SERVER;
+      const token = localStorage.getItem('accessToken');
+      console.log(token)
+      const response = await axios.post(
+        `${API_URL}/history/`,
+        {"title":title, "data":content},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('post fail', error);
+      throw error;
+    }
+  };
+
+  const patchHistory = async (title, content, id) => {
+    try {
+      const API_URL = process.env.REACT_APP_API_SERVER;
+      const token = localStorage.getItem('accessToken');
+      const response = await axios.patch(
+        `${API_URL}/history/${id}/`,
+        {"title":title, "data":content},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('path fail', error);
+      throw error;
+    }
+  };
+
+  const getHistory = async () => {
+    try {
+      const API_URL = process.env.REACT_APP_API_SERVER;
+      const token = localStorage.getItem('accessToken');
+      const api = axios.create(
+        {
+          baseURL: `${API_URL}`, // Django 서버 주소
+          withCredentials: true, // CORS 정책에서 Credentials 지원
+        }
+      )
+      const response = await api.get(
+        `/history/`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('get fail', error);
+      throw error;
+    }
+  };
+
 
   // 검색
   const handleSearch = useCallback(() => {
@@ -126,45 +193,48 @@ function Main() {
       return;
     }
     if (!inputValue.trim()) return;
-
+    const token = localStorage.getItem('accessToken');
     const timestamp = new Date();
     const { question, answer } = createChatMessage(
-      <QuestionWithCategory>
-        {selectedCategory !== null && (
-          <CategoryTag>{categories[selectedCategory].name}</CategoryTag>
-        )}
-        {inputValue}
-      </QuestionWithCategory>,
+      inputValue,
       timestamp
     );
-
-    // 기존 채팅 메시지에 업데이트트
+    const title = inputValue.slice(0, 50)
+    // 기존 채팅 메시지에 업데이트
     const updatedMessages = [...chatMessages, question, answer];
-
     // 채팅방 최초 생성할 때
     if (!currentChatId) {
       const newChatId = Date.now().toString();
       const newChat = createNewChat(
         newChatId,
-        selectedCategory !== null ? categories[selectedCategory].name : "",
-        inputValue,
+        '',
+        title,
         updatedMessages,
-        timestamp
       );
-
-      setCurrentChatId(newChatId);
-      setLocalHistory((prev) => [newChat, ...prev]);
+      postHistory(title, updatedMessages).then(res =>{
+        console.log(res)
+        setCurrentChatId(res.id);
+        newChat.id = res.id
+        newChat.author = res.author
+        setLocalHistory((prev) => [res, ...prev]);
+      })
     } else {
       // 기존 채팅방일 때
       setLocalHistory((prev) =>
-        prev.map((chat) =>
+        prev.map((chat) => 
           chat.id === currentChatId
-            ? { ...chat, messages: updatedMessages }
+            ? { ...chat, title:title, data: updatedMessages }
             : chat
         )
       );
+      for (let i = 0; i< localHistory.length; i++) {
+        if (localHistory[i].id === currentChatId) {
+          patchHistory(title, updatedMessages, currentChatId);
+          break;
+        }
+      }
     }
-
+    
     setChatMessages(updatedMessages);
     setInputValue("");
 
@@ -199,21 +269,7 @@ function Main() {
   const handleHistoryItemClick = useCallback(
     (item) => {
       setCurrentChatId(item.id);
-
-      const formattedMessages = item.messages.map((message) => {
-        if (message.type === "question") {
-          const content =
-            typeof message.content === "object"
-              ? message.content.props.children[1]
-              : message.content;
-
-          return {
-            ...message,
-            content: content,
-          };
-        }
-        return message;
-      });
+      const formattedMessages = item.data
 
       setChatMessages(formattedMessages);
 
@@ -221,6 +277,11 @@ function Main() {
         (cat) => cat.name === item.category
       );
       setSelectedCategory(categoryIndex !== -1 ? categoryIndex : null);
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 100);
     },
     [categories]
   );
@@ -285,19 +346,13 @@ function Main() {
     setIsLoggedIn(loginStatus);
 
     if (loginStatus) {
-      const savedHistory = localStorage.getItem("chatHistory");
-      if (savedHistory) {
-        setLocalHistory(JSON.parse(savedHistory));
-      }
+      // const savedHistory = localStorage.getItem("chatHistory");
+      getHistory().then(response => {
+        console.log(response)
+        setLocalHistory(response);
+      })
     }
   }, []);
-
-  // 히스토리 변경 시 로컬 스토리지에 저장
-  useEffect(() => {
-    if (isLoggedIn && localHistory.length > 0) {
-      localStorage.setItem("chatHistory", JSON.stringify(localHistory));
-    }
-  }, [localHistory, isLoggedIn]);
 
   return (
     <Container>

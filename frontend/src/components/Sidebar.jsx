@@ -9,14 +9,15 @@ function HistorySidebar({
   handleAuthClick,
   isLoggedIn,
 }) {
+  const localHistory_sorted = [...localHistory].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   return (
     <Sidebar>
       <SidebarContent>
         <TitleContainer>
           <Title>HISTORY</Title>
         </TitleContainer>
-
-        {localHistory.map((chat) => (
+        
+        {localHistory_sorted.map((chat) => (
           <HistoryItem
             key={chat.id}
             onClick={() => handleHistoryItemClick(chat)}
@@ -34,11 +35,11 @@ function HistorySidebar({
             </HeaderRow>
             <HistoryQuestion>
               <HistoryQuestionText active={chat.id === currentChatId}>
-                {chat.firstQuestion}
+                {chat.title}
               </HistoryQuestionText>
             </HistoryQuestion>
             <HistoryTime active={chat.id === currentChatId}>
-              {new Date(chat.timestamp).toLocaleTimeString()}
+              {new Date(chat.data[0].timestamp).toLocaleTimeString()} 
             </HistoryTime>
           </HistoryItem>
         ))}
