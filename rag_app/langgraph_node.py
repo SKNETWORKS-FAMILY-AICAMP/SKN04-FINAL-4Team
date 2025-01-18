@@ -1,29 +1,10 @@
-from typing import TypedDict, Annotated
-from langgraph.graph import StateGraph
-from langgraph.graph.message import add_messages
+from langgraph_state import State
 from langchain_core.runnables import RunnableConfig
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.messages.ai import AIMessageChunk
-from langchain_core.messages.human import HumanMessage
-from dotenv import load_dotenv
-
-
-load_dotenv('./.env',verbose=True)
-class State(TypedDict):
-    # 메시지 정의(list type 이며 add_messages 함수를 사용하여 메시지를 추가)
-    question: Annotated[list, add_messages]
-    context: Annotated[str, "Context"]
-    answer: Annotated[str, "Answer"]
-    generation: Annotated[str, "LLM generated answer"]
-    # messages: Annotated[list, add_messages]
-    domain: Annotated[str, "Domain"]
+from langchain_core.messages import AIMessageChunk
 
 
 def domain_condition(state: State):
     return state["domain"]
-
 
 def get_rewrite_template():
     rewrite_prompt = """
@@ -56,19 +37,33 @@ def get_rewrite_template():
     return rewrite_prompt
 
 
-def query_rewrite_llm(state: State, config: RunnableConfig):
-    rewriter_llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0)
+def rewrite_query(state: State, llm, config: RunnableConfig):
     original_query = state["question"][-1].content
     rewrite_prompt = get_rewrite_template()
     final_prompt = rewrite_prompt.format(query=original_query)
-    new_query = rewriter_llm.invoke(final_prompt, config).content.strip()
+    new_query = llm.invoke(final_prompt, config).content.strip()
 
     return State(question=new_query)
 
 
-def call_model(state: State, prompt, llm, config: RunnableConfig):
+def get_prompt():
+    final_prompt = """
+    너는 내용을보고 질문에 대해 답에대한 추론을하고 답을 내는 역할이야. 답은 반드시 한국어로 해줘
+    답의 형식은 아래와같아
+    ##추론:
+
+    ##답:
+-----------------------------------------------------------------------------------
+    ##내용: {context}
+
+    ##질문: {question}
+    """
+    return final_prompt
+
+def call_model(state: State, llm, config: RunnableConfig):
     question = state["question"][-1].content
     context = state["context"]
+    prompt = get_prompt()
     final_prompt = prompt.format(context=context, question=question)
     response = llm.invoke(final_prompt, config)
     model_result = response
@@ -101,13 +96,11 @@ def get_routing_template():
     return routing_prompt
 
 
-def route_domain_llm(state: State, config: RunnableConfig):
+def route_query(state: State, llm, config: RunnableConfig):
     user_query = state["question"][-1].content  # 마지막 사용자 질문
-    routing_llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0)
     routing_prompt = get_routing_template()
     final_prompt = routing_prompt.format(query=user_query)
-
-    llm_output = routing_llm.invoke(final_prompt, config).content
+    llm_output = llm.invoke(final_prompt, config).content
     domain_str = llm_output.strip().lower()  # 예: "law" 혹은 "manual"
     
     # 3) state["domain"] 에 결과 저장
@@ -152,15 +145,6 @@ def retrieve_document_law(state: State, law_retriever, bm25_retriever, config: R
 
     chunk = AIMessageChunk(content=retrieved_content)
     return State(context=chunk)
-
-
-# def retrieve_document_manual(state: State, manual_retriever, config: RunnableConfig):
-#     question = state["question"][-1].content
-#     docs = manual_retriever.get_relevant_documents(question)
-#     retrieved_content = docs[0].page_content if docs else ""
-#     chunk = AIMessageChunk(content=retrieved_content)
-    
-#     return State(context=chunk)
 
 def retrieve_document_manual(state: State, manual_retriever, bm25_retriever, config: RunnableConfig, alpha=0.7, k=3):
     # 사용자 질문 추출
