@@ -1,5 +1,7 @@
 import React from "react";
 import styled from "styled-components";
+import '../style.css';
+
 
 function ContentContainer({
   scrollRef,
@@ -13,6 +15,7 @@ function ContentContainer({
   handleSearch,
   handleReset,
   searchConfig,
+  recv,
 }) {
   return (
     <ContentWrapper>
@@ -24,46 +27,10 @@ function ContentContainer({
           </SelectedCategory>
         )}
 
-        <CategoryGrid>
-          {categories.map((category, index) => (
-            <CategoryButton
-              key={index}
-              onClick={() => handleCategoryClick(index)}
-              isSelected={selectedCategory === index}
-            >
-              <IconWrapper isSelected={selectedCategory === index}>
-                {category.icon}
-              </IconWrapper>
-              <CategoryName>{category.name}</CategoryName>
-            </CategoryButton>
-          ))}
-        </CategoryGrid>
-
         <ChatContainer>
-          {chatMessages.map((message, index) => {
-            if (
-              message.type === "question" &&
-              index + 1 < chatMessages.length
-            ) {
-              const answer = chatMessages[index + 1];
-              return (
-                <ChatItem key={index}>
-                  <QuestionText>
-                    {selectedCategory !== null && (
-                      <CategoryTag>
-                        {categories[selectedCategory].name}
-                      </CategoryTag>
-                    )}
-                    {typeof message.content === "object"
-                      ? message.content.props.children[1]
-                      : message.content}
-                  </QuestionText>
-                  <AnswerText>{answer.content}</AnswerText>
-                </ChatItem>
-              );
-            }
-            return null;
-          })}
+          {recv.length !== 0 && (
+            <div dangerouslySetInnerHTML={{ __html: recv }}></div>
+            )}
         </ChatContainer>
       </ScrollableContent>
 

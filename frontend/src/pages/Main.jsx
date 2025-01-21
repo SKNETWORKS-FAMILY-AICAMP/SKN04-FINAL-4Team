@@ -25,6 +25,7 @@ import NavBar from "../components/NavBar";
 import HistorySidebar from "../components/Sidebar";
 import ContentContainer from "../components/ContentContainer";
 import SourceSidebar from "../components/SourceSidebar";
+import '../style.css';
 
 function Main() {
   const navigate = useNavigate();
@@ -36,6 +37,12 @@ function Main() {
   const [currentChatId, setCurrentChatId] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [hoveredDoc, setHoveredDoc] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [recvMessages, setRecvMessages] = useState([]);
+  const [humanMessages, setHumanMessages] = useState([]);
+  const [aiMessages, setAiMessages] = useState([]);
+
+  const ws = useRef(null);
 
   const scrollRef = useRef(null);
 
@@ -204,6 +211,64 @@ function Main() {
     }
   };
 
+  const searchQuery = () => {
+    if (isLoading) return;
+
+    ws.current = new WebSocket("ws://127.0.0.1:8002/ws/query");
+    setIsLoading(true);
+    ws.current.onopen = () => {
+      // 사용자 쿼리를 서버에 전송
+      const query = { query: inputValue };
+      ws.current.send(JSON.stringify(query));
+      // setRecvMessages((prevMessages) => [
+      //   ...prevMessages,
+      //   { sender: 'user', content: inputValue }
+      // ]);
+      setRecvMessages((prevMessages) => prevMessages + `<div class="human-message">${inputValue}</div>`);
+      // setRecvMessages((prevMessages) => [
+      //   ...prevMessages,
+      //   <HumanMsg>{inputValue}</HumanMsg>
+      // ]);
+      setInputValue(''); // 입력 필드 초기화
+
+    ws.current.onmessage = (event) => {
+      if (event.data === '=== Start ===') {
+        setRecvMessages((prevMessages) => prevMessages + `<div class="ai-message">`);
+        return;
+      }
+      // console.log('서버로부터 메시지 수신:', event.data);
+      // setRecvMessages((prevMessages) => [...prevMessages, event.data]);
+      // setRecvMessages((prevMessages) => [
+      //   ...prevMessages,
+      //   { sender: 'system', content: event.data }
+      // ]);
+      if (event.data.trim() === '=== Done ===') {
+        setRecvMessages((prevMessages) => prevMessages + `</div>`);
+        ws.current.close(); // 연결 종료
+        return;
+      }
+      setRecvMessages((prevMessages) => prevMessages + event.data);
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 100);
+    };
+
+    ws.current.onerror = (error) => {
+      console.error('WebSocket 에러:', error);
+      // setMessages((prevMessages) => [...prevMessages, 'WebSocket 에러가 발생했습니다.']);
+      setIsLoading(false);
+    };
+
+    ws.current.onclose = (event) => {
+      console.log('WebSocket 연결이 닫혔습니다.', event);
+      // setMessages((prevMessages) => [...prevMessages, 'WebSocket 연결이 닫혔습니다.']);
+      setIsLoading(false);
+    };
+    };
+  }
+
   // 검색
   const handleSearch = useCallback(() => {
     if (searchConfig.requireCategory === 1 && selectedCategory === null) {
@@ -211,50 +276,54 @@ function Main() {
       return;
     }
     if (!inputValue.trim()) return;
-    const token = localStorage.getItem('accessToken');
-    const timestamp = new Date();
-    const { question, answer } = createChatMessage(
-      inputValue,
-      timestamp
-    );
-    const title = inputValue.slice(0, 50)
-    // 기존 채팅 메시지에 업데이트
-    const updatedMessages = [...chatMessages, question, answer];
-    // 채팅방 최초 생성할 때
-    if (!currentChatId) {
-      const newChatId = Date.now().toString();
-      const newChat = createNewChat(
-        newChatId,
-        '',
-        title,
-        updatedMessages,
-      );
-      postHistory(title, updatedMessages).then(res =>{
-        console.log(res)
-        setCurrentChatId(res.id);
-        newChat.id = res.id
-        newChat.author = res.author
-        setLocalHistory((prev) => [res, ...prev]);
-      })
-    } else {
-      // 기존 채팅방일 때
-      setLocalHistory((prev) =>
-        prev.map((chat) => 
-          chat.id === currentChatId
-            ? { ...chat, title:title, data: updatedMessages }
-            : chat
-        )
-      );
-      for (let i = 0; i< localHistory.length; i++) {
-        if (localHistory[i].id === currentChatId) {
-          patchHistory(title, updatedMessages, currentChatId);
-          break;
-        }
-      }
-    }
+
+    searchQuery();
+
+
+    // const token = localStorage.getItem('accessToken');
+    // const timestamp = new Date();
+    // const { question, answer } = createChatMessage(
+    //   inputValue,
+    //   timestamp
+    // );
+    // const title = inputValue.slice(0, 50)
+    // // 기존 채팅 메시지에 업데이트
+    // const updatedMessages = [...chatMessages, question, answer];
+    // // 채팅방 최초 생성할 때
+    // if (!currentChatId) {
+    //   const newChatId = Date.now().toString();
+    //   const newChat = createNewChat(
+    //     newChatId,
+    //     '',
+    //     title,
+    //     updatedMessages,
+    //   );
+    //   postHistory(title, updatedMessages).then(res =>{
+    //     console.log(res)
+    //     setCurrentChatId(res.id);
+    //     newChat.id = res.id
+    //     newChat.author = res.author
+    //     setLocalHistory((prev) => [res, ...prev]);
+    //   })
+    // } else {
+    //   // 기존 채팅방일 때
+    //   setLocalHistory((prev) =>
+    //     prev.map((chat) => 
+    //       chat.id === currentChatId
+    //         ? { ...chat, title:title, data: updatedMessages }
+    //         : chat
+    //     )
+    //   );
+    //   for (let i = 0; i< localHistory.length; i++) {
+    //     if (localHistory[i].id === currentChatId) {
+    //       patchHistory(title, updatedMessages, currentChatId);
+    //       break;
+    //     }
+    //   }
+    // }
     
-    setChatMessages(updatedMessages);
-    setInputValue("");
+    // setChatMessages(updatedMessages);
+    // setInputValue("");
 
     // 자동 스크롤
     setTimeout(() => {
@@ -375,6 +444,29 @@ function Main() {
     }
   }, []);
 
+  // return (
+  //   <div className="App">
+  //     <h1>실시간 WebSocket 메시지 스트리밍</h1>
+  //     <div className="message-container">
+  //       <pre>{recvMessages}</pre>
+  //       {/* <div ref={messagesEndRef} /> */}
+  //     </div>
+  //     <div className="input-container">
+  //       <input
+  //         type="text"
+  //         value={inputValue}
+  //         onChange={(e) => setInputValue(e.target.value)}
+  //         // onKeyPress={handleKeyPress}
+  //         placeholder="검색할 쿼리를 입력하세요..."
+  //         disabled={isLoading} // 로딩 중일 때 입력 필드 비활성화
+  //       />
+  //       <button onClick={searchQuery} disabled={isLoading || inputValue.trim() === ''}>
+  //         {isLoading ? '검색 중...' : '검색'}
+  //       </button>
+  //     </div>
+  //   </div>
+  // );
+ 
   return (
     <Container>
       <Overlay isActive={!isLoggedIn} />
@@ -388,6 +480,45 @@ function Main() {
           handleAuthClick={handleAuthClick}
           isLoggedIn={isLoggedIn}
         />
+        {/* <div>
+          {recvMessages.map((message, index) => (
+            <div
+              key={index}
+              className={`chat-message ${message.sender === 'user' ? 'user-message' : 'system-message'}`}
+            >
+              {message.content}
+            </div>
+          ))}
+        </div> */}
+        {/* <div className="chat-container">
+          <div className="chat-header">ChatGPT</div>
+          <div className="chat-messages">
+            <div className="chat-box" dangerouslySetInnerHTML={{ __html: recvMessages }}></div>
+          </div>
+          <div className="chat-input">
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Type your message..."
+            />
+            <button onClick={handleSearch}>Send</button>
+          </div>
+        </div> */}
+        
+        {/* <div className="chat-container">
+          <div className="chat-box" dangerouslySetInnerHTML={{ __html: recvMessages }}></div>
+        
+          <div className="input-container">
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Enter your query"
+            />
+            <button onClick={handleSearch}>Search</button>
+          </div>
+        </div> */}
         <ContentContainer
           scrollRef={scrollRef}
           chatMessages={chatMessages}
@@ -400,6 +531,7 @@ function Main() {
           handleSearch={handleSearch}
           handleReset={handleReset}
           searchConfig={searchConfig}
+          recv={recvMessages}
         />
         {chatMessages.length > 0 && (
           <SourceSidebar
@@ -470,4 +602,13 @@ const CategoryTag = styled.span`
   font-weight: 600;
   margin-right: 8px;
   flex-shrink: 0;
+`;
+
+const HumanMsg = styled.div`
+  padding: 12px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  margin-bottom: 16px;
 `;
