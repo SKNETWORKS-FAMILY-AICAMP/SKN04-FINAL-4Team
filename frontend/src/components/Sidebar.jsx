@@ -9,7 +9,7 @@ function HistorySidebar({
   handleAuthClick,
   isLoggedIn,
 }) {
-  const localHistory_sorted = [...localHistory].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  const localHistory_sorted = [...localHistory].sort((a, b) => new Date(b.data[0].timestamp) - new Date(a.data[0].timestamp));
   return (
     <Sidebar>
       <SidebarContent>
