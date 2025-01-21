@@ -39,8 +39,9 @@ class HistoryList(generics.ListAPIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk):
-        history = get_object_or_404(DialogHistory, pk=pk)
+    def delete(self, request, *args, **kwargs):
+        instance_id = kwargs.get('id')
+        history = get_object_or_404(DialogHistory, id=instance_id)
         history.delete()
         return Response({"message": "삭제되었습니다."}, status=status.HTTP_204_NO_CONTENT)
     
