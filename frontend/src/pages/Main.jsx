@@ -185,6 +185,24 @@ function Main() {
     }
   };
 
+  const deleteHistory = async (id) => {
+    try {
+      const API_URL = process.env.REACT_APP_API_SERVER;
+      const token = localStorage.getItem('accessToken');
+      const response = await axios.delete(
+        `${API_URL}/history/${id}/`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('delete fail', error);
+      throw error;
+    }
+  };
 
   // 검색
   const handleSearch = useCallback(() => {
@@ -317,16 +335,19 @@ function Main() {
 
   // 히스토리에서 특정 채팅 삭제
   const handleDeleteHistory = useCallback(
-    (chatId, e) => {
+    async (chatId, e) => {
       e.stopPropagation();
-      const updatedHistory = localHistory.filter((chat) => chat.id !== chatId);
-      setLocalHistory(updatedHistory);
-      localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
-
-      // 현재 보고 있던 채팅방이면 초기화
-      if (chatId === currentChatId) {
-        setChatMessages([]);
-        setCurrentChatId(null);
+      try {
+        await deleteHistory(chatId);
+        const response = await getHistory();
+        setLocalHistory(response);
+        // 현재 보고 있던 채팅방이면 초기화
+        if (chatId === currentChatId) {
+          setChatMessages([]);
+          setCurrentChatId(null);
+        }
+      } catch (error) {
+        console.error("삭제 중 오류 발생:", error);
       }
     },
     [localHistory, currentChatId]
