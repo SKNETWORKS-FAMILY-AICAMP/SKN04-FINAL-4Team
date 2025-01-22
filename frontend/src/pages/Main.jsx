@@ -37,13 +37,13 @@ function Main() {
   const [currentChatId, setCurrentChatId] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [hoveredDoc, setHoveredDoc] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [recvMessages, setRecvMessages] = useState([]);
+  const [recvMessages, setRecvMessages] = useState("");
   const [humanMessages, setHumanMessages] = useState([]);
   const [aiMessages, setAiMessages] = useState([]);
 
   const ws = useRef(null);
-
+  const historyMessages = useRef("");
+  const isLoading = useRef(false);
   const scrollRef = useRef(null);
 
   // 검색 조건 (0일 땐 카테고리 선택 없이도 검색 가능)
@@ -210,44 +210,70 @@ function Main() {
       throw error;
     }
   };
-
+  useEffect(() => {
+        
+  },[recvMessages]);
   const searchQuery = () => {
-    if (isLoading) return;
-
-    ws.current = new WebSocket("ws://127.0.0.1:8002/ws/query");
-    setIsLoading(true);
+    if (isLoading.current) return;
+    try {
+      ws.current = new WebSocket("ws://127.0.0.1:8002/ws/query");
+      ws.current.onerror = (error) => {
+        console.error('WebSocket 에러:', error);
+        setRecvMessages((prevMessages) => prevMessages + `<div class="human-message">커넥션 실패. 서버를 확인해주세요.</div>`);
+      };
+    } catch (error) {
+      console.error('커넥션 실패. 서버를 확인해주세요.', error);
+      setRecvMessages((prevMessages) => prevMessages + `<div class="human-message">커넥션 실패. 서버를 확인해주세요.</div>`);
+      return;
+    }
+    
+    isLoading.current = true;
     ws.current.onopen = () => {
       // 사용자 쿼리를 서버에 전송
       const query = { query: inputValue };
       ws.current.send(JSON.stringify(query));
-      // setRecvMessages((prevMessages) => [
-      //   ...prevMessages,
-      //   { sender: 'user', content: inputValue }
-      // ]);
       setRecvMessages((prevMessages) => prevMessages + `<div class="human-message">${inputValue}</div>`);
-      // setRecvMessages((prevMessages) => [
-      //   ...prevMessages,
-      //   <HumanMsg>{inputValue}</HumanMsg>
-      // ]);
+      historyMessages.current += `<div class="human-message">${inputValue}</div>`;
       setInputValue(''); // 입력 필드 초기화
 
     ws.current.onmessage = (event) => {
       if (event.data === '=== Start ===') {
         setRecvMessages((prevMessages) => prevMessages + `<div class="ai-message">`);
+        historyMessages.current += `<div class="ai-message">`;
         return;
       }
-      // console.log('서버로부터 메시지 수신:', event.data);
-      // setRecvMessages((prevMessages) => [...prevMessages, event.data]);
-      // setRecvMessages((prevMessages) => [
-      //   ...prevMessages,
-      //   { sender: 'system', content: event.data }
-      // ]);
       if (event.data.trim() === '=== Done ===') {
         setRecvMessages((prevMessages) => prevMessages + `</div>`);
+        historyMessages.current += `</div>`;
+        isLoading.current = false;
+        const title = inputValue.slice(0, 50)
+        if (!currentChatId) {
+          postHistory(title, historyMessages.current).then(res =>{
+            console.log(res)
+            setCurrentChatId(res.id);
+            setLocalHistory((prev) => [res, ...prev]);
+          })
+        } else {
+          setLocalHistory((prev) =>
+            prev.map((chat) => 
+              chat.id === currentChatId
+                ? { ...chat, title:title, data: historyMessages.current }
+                : chat
+            )
+          );
+          for (let i = 0; i< localHistory.length; i++) {
+            if (localHistory[i].id === currentChatId) {
+              patchHistory(title, historyMessages.current, currentChatId);
+              break;
+            }
+          }
+        }
+
         ws.current.close(); // 연결 종료
         return;
       }
       setRecvMessages((prevMessages) => prevMessages + event.data);
+      historyMessages.current += event.data;
       setTimeout(() => {
         if (scrollRef.current) {
           scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -258,13 +284,13 @@ function Main() {
     ws.current.onerror = (error) => {
       console.error('WebSocket 에러:', error);
       // setMessages((prevMessages) => [...prevMessages, 'WebSocket 에러가 발생했습니다.']);
-      setIsLoading(false);
+      isLoading.current = false;
     };
 
     ws.current.onclose = (event) => {
       console.log('WebSocket 연결이 닫혔습니다.', event);
       // setMessages((prevMessages) => [...prevMessages, 'WebSocket 연결이 닫혔습니다.']);
-      setIsLoading(false);
+      isLoading.current = false;
     };
     };
   }
@@ -278,53 +304,6 @@ function Main() {
     if (!inputValue.trim()) return;
 
     searchQuery();
-
-
-    // const token = localStorage.getItem('accessToken');
-    // const timestamp = new Date();
-    // const { question, answer } = createChatMessage(
-    //   inputValue,
-    //   timestamp
-    // );
-    // const title = inputValue.slice(0, 50)
-    // // 기존 채팅 메시지에 업데이트
-    // const updatedMessages = [...chatMessages, question, answer];
-    // // 채팅방 최초 생성할 때
-    // if (!currentChatId) {
-    //   const newChatId = Date.now().toString();
-    //   const newChat = createNewChat(
-    //     newChatId,
-    //     '',
-    //     title,
-    //     updatedMessages,
-    //   );
-    //   postHistory(title, updatedMessages).then(res =>{
-    //     console.log(res)
-    //     setCurrentChatId(res.id);
-    //     newChat.id = res.id
-    //     newChat.author = res.author
-    //     setLocalHistory((prev) => [res, ...prev]);
-    //   })
-    // } else {
-    //   // 기존 채팅방일 때
-    //   setLocalHistory((prev) =>
-    //     prev.map((chat) => 
-    //       chat.id === currentChatId
-    //         ? { ...chat, title:title, data: updatedMessages }
-    //         : chat
-    //     )
-    //   );
-    //   for (let i = 0; i< localHistory.length; i++) {
-    //     if (localHistory[i].id === currentChatId) {
-    //       patchHistory(title, updatedMessages, currentChatId);
-    //       break;
-    //     }
-    //   }
-    // }
-    
-    // setChatMessages(updatedMessages);
-    // setInputValue("");
-
     // 자동 스크롤
     setTimeout(() => {
       if (scrollRef.current) {
@@ -358,8 +337,9 @@ function Main() {
       setCurrentChatId(item.id);
       const formattedMessages = item.data
 
-      setChatMessages(formattedMessages);
-
+      // setChatMessages(formattedMessages);
+      setRecvMessages(formattedMessages);
+      historyMessages.current = formattedMessages;
       const categoryIndex = categories.findIndex(
         (cat) => cat.name === item.category
       );
@@ -375,7 +355,8 @@ function Main() {
 
   // 전체 리셋
   const handleReset = useCallback(() => {
-    setChatMessages([]);
+    setRecvMessages("");
+    historyMessages.current = "";
     setSelectedCategory(null);
     setCurrentChatId(null);
   }, []);
@@ -412,8 +393,9 @@ function Main() {
         setLocalHistory(response);
         // 현재 보고 있던 채팅방이면 초기화
         if (chatId === currentChatId) {
-          setChatMessages([]);
+          setRecvMessages("");
           setCurrentChatId(null);
+          historyMessages.current = "";
         }
       } catch (error) {
         console.error("삭제 중 오류 발생:", error);
@@ -444,29 +426,6 @@ function Main() {
     }
   }, []);
 
-  // return (
-  //   <div className="App">
-  //     <h1>실시간 WebSocket 메시지 스트리밍</h1>
-  //     <div className="message-container">
-  //       <pre>{recvMessages}</pre>
-  //       {/* <div ref={messagesEndRef} /> */}
-  //     </div>
-  //     <div className="input-container">
-  //       <input
-  //         type="text"
-  //         value={inputValue}
-  //         onChange={(e) => setInputValue(e.target.value)}
-  //         // onKeyPress={handleKeyPress}
-  //         placeholder="검색할 쿼리를 입력하세요..."
-  //         disabled={isLoading} // 로딩 중일 때 입력 필드 비활성화
-  //       />
-  //       <button onClick={searchQuery} disabled={isLoading || inputValue.trim() === ''}>
-  //         {isLoading ? '검색 중...' : '검색'}
-  //       </button>
-  //     </div>
-  //   </div>
-  // );
- 
   return (
     <Container>
       <Overlay isActive={!isLoggedIn} />
@@ -480,45 +439,6 @@ function Main() {
           handleAuthClick={handleAuthClick}
           isLoggedIn={isLoggedIn}
         />
-        {/* <div>
-          {recvMessages.map((message, index) => (
-            <div
-              key={index}
-              className={`chat-message ${message.sender === 'user' ? 'user-message' : 'system-message'}`}
-            >
-              {message.content}
-            </div>
-          ))}
-        </div> */}
-        {/* <div className="chat-container">
-          <div className="chat-header">ChatGPT</div>
-          <div className="chat-messages">
-            <div className="chat-box" dangerouslySetInnerHTML={{ __html: recvMessages }}></div>
-          </div>
-          <div className="chat-input">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Type your message..."
-            />
-            <button onClick={handleSearch}>Send</button>
-          </div>
-        </div> */}
-        
-        {/* <div className="chat-container">
-          <div className="chat-box" dangerouslySetInnerHTML={{ __html: recvMessages }}></div>
-        
-          <div className="input-container">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Enter your query"
-            />
-            <button onClick={handleSearch}>Search</button>
-          </div>
-        </div> */}
         <ContentContainer
           scrollRef={scrollRef}
           chatMessages={chatMessages}
@@ -532,6 +452,7 @@ function Main() {
           handleReset={handleReset}
           searchConfig={searchConfig}
           recv={recvMessages}
+          isLoading={isLoading.current}
         />
         {chatMessages.length > 0 && (
           <SourceSidebar

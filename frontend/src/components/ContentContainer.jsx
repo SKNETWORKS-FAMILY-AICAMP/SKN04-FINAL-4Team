@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import '../style.css';
+import {marked} from "marked";
 
 
 function ContentContainer({
@@ -16,7 +17,12 @@ function ContentContainer({
   handleReset,
   searchConfig,
   recv,
+  isLoading,
 }) {
+  let htmlContent="";
+  if (recv !==null && recv.length !== 0) {
+    htmlContent = marked(recv);
+  }
   return (
     <ContentWrapper>
       <ScrollableContent ref={scrollRef}>
@@ -28,8 +34,8 @@ function ContentContainer({
         )}
 
         <ChatContainer>
-          {recv.length !== 0 && (
-            <div dangerouslySetInnerHTML={{ __html: recv }}></div>
+          {(htmlContent !== null && htmlContent.length !== 0) && (
+            <div dangerouslySetInnerHTML={{ __html: htmlContent }}></div>
             )}
         </ChatContainer>
       </ScrollableContent>
@@ -54,7 +60,9 @@ function ContentContainer({
             searchConfig.requireCategory === 1 && selectedCategory === null
           }
         />
-        <SearchButton onClick={handleSearch}>검색</SearchButton>
+        <SearchButton onClick={handleSearch} disabled={isLoading || inputValue.trim() === ''}>
+          {isLoading ? '검색 중...' : '검색'}
+        </SearchButton>
       </SearchContainer>
     </ContentWrapper>
   );
