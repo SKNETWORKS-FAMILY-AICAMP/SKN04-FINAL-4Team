@@ -13,8 +13,8 @@
     padding: 24px;
     width: fit-content;
     place-self: flex-start;
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background-color: #ffffffff;
+    border: 1px solid rgb(255, 255, 255, 255);
     border-radius: 12px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
     margin-bottom: 16px;
