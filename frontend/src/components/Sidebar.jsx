@@ -9,7 +9,7 @@ function HistorySidebar({
   handleAuthClick,
   isLoggedIn,
 }) {
-  const localHistory_sorted = [...localHistory].sort((a, b) => new Date(b.data[0].timestamp) - new Date(a.data[0].timestamp));
+  const localHistory_sorted = [...localHistory].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   return (
     <Sidebar>
       <SidebarContent>
@@ -39,7 +39,7 @@ function HistorySidebar({
               </HistoryQuestionText>
             </HistoryQuestion>
             <HistoryTime active={chat.id === currentChatId}>
-              {new Date(chat.data[0].timestamp).toLocaleTimeString()} 
+              {new Date(chat.timestamp).toLocaleTimeString()} 
             </HistoryTime>
           </HistoryItem>
         ))}

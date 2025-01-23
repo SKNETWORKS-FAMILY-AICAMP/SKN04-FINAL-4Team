@@ -1,5 +1,8 @@
 import React from "react";
 import styled from "styled-components";
+import '../style.css';
+import {marked} from "marked";
+
 
 function ContentContainer({
   scrollRef,
@@ -13,7 +16,13 @@ function ContentContainer({
   handleSearch,
   handleReset,
   searchConfig,
+  recv,
+  isLoading,
 }) {
+  let htmlContent="";
+  if (recv !==null && recv.length !== 0) {
+    htmlContent = marked(recv);
+  }
   return (
     <ContentWrapper>
       <ScrollableContent ref={scrollRef}>
@@ -24,46 +33,10 @@ function ContentContainer({
           </SelectedCategory>
         )}
 
-        <CategoryGrid>
-          {categories.map((category, index) => (
-            <CategoryButton
-              key={index}
-              onClick={() => handleCategoryClick(index)}
-              isSelected={selectedCategory === index}
-            >
-              <IconWrapper isSelected={selectedCategory === index}>
-                {category.icon}
-              </IconWrapper>
-              <CategoryName>{category.name}</CategoryName>
-            </CategoryButton>
-          ))}
-        </CategoryGrid>
-
         <ChatContainer>
-          {chatMessages.map((message, index) => {
-            if (
-              message.type === "question" &&
-              index + 1 < chatMessages.length
-            ) {
-              const answer = chatMessages[index + 1];
-              return (
-                <ChatItem key={index}>
-                  <QuestionText>
-                    {selectedCategory !== null && (
-                      <CategoryTag>
-                        {categories[selectedCategory].name}
-                      </CategoryTag>
-                    )}
-                    {typeof message.content === "object"
-                      ? message.content.props.children[1]
-                      : message.content}
-                  </QuestionText>
-                  <AnswerText>{answer.content}</AnswerText>
-                </ChatItem>
-              );
-            }
-            return null;
-          })}
+          {(htmlContent !== null && htmlContent.length !== 0) && (
+            <div dangerouslySetInnerHTML={{ __html: htmlContent }}></div>
+            )}
         </ChatContainer>
       </ScrollableContent>
 
@@ -87,7 +60,9 @@ function ContentContainer({
             searchConfig.requireCategory === 1 && selectedCategory === null
           }
         />
-        <SearchButton onClick={handleSearch}>검색</SearchButton>
+        <SearchButton onClick={handleSearch} disabled={isLoading || inputValue.trim() === ''}>
+          {isLoading ? '검색 중...' : '검색'}
+        </SearchButton>
       </SearchContainer>
     </ContentWrapper>
   );
