@@ -12,7 +12,7 @@ app = FastAPI()
 graph_builder = GraphBuilder()
 memory = MemorySaver()
 graph = graph_builder.graph_builder.compile(checkpointer=memory)
-print(f'im ready; __name__={__name__}')
+print(f'랭그래프 빌드완료 __name__={__name__}')
 
 @app.websocket("/ws/query")
 async def query_websocket(websocket: WebSocket):
@@ -24,9 +24,10 @@ async def query_websocket(websocket: WebSocket):
         if user_query == "":
             return
 
+        thread_id = data.get("id", "1")
         config = RunnableConfig(
             recursion_limit=10,  # 최대 10개의 노드까지 방문. 그 이상은 RecursionError 발생
-            configurable={"thread_id": "6344"},  # 스레드 ID 설정
+            configurable={"thread_id": thread_id},  # 스레드 ID 설정
         )
 
         inputs = State(question=user_query)
