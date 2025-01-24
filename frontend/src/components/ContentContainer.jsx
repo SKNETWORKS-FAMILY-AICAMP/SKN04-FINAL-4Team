@@ -32,12 +32,25 @@ function ContentContainer({
             {categories[selectedCategory].name}
           </SelectedCategory>
         )}
-
-        <ChatContainer>
-          {(htmlContent !== null && htmlContent.length !== 0) && (
-            <div dangerouslySetInnerHTML={{ __html: htmlContent }}></div>
-            )}
-        </ChatContainer>
+      <CategoryGrid>
+          {categories.map((category, index) => (
+            <CategoryButton
+              key={index}
+              onClick={() => handleCategoryClick(index)}
+              isSelected={selectedCategory === index}
+            >
+              <IconWrapper isSelected={selectedCategory === index}>
+                {category.icon}
+              </IconWrapper>
+              <CategoryName>{category.name}</CategoryName>
+            </CategoryButton>
+          ))}
+      </CategoryGrid>
+      <ChatContainer>
+        {(htmlContent !== null && htmlContent.length !== 0) && (
+          <div dangerouslySetInnerHTML={{ __html: htmlContent }}></div>
+          )}
+      </ChatContainer>
       </ScrollableContent>
 
       <SearchContainer>

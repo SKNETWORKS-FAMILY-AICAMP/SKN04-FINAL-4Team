@@ -10,6 +10,9 @@ import { useNavigate } from "react-router-dom";
 import {
   FaMoneyBillWave,
   FaIndustry,
+  FaGavel,
+  FaTools,
+  FaScroll,
   FaGraduationCap,
   FaShieldAlt,
   FaUserTie,
@@ -57,15 +60,15 @@ function Main() {
   // 카테고리 목록
   const categories = useMemo(
     () => [
-      { icon: <FaMoneyBillWave />, name: "기획재정･금융･공정거래" },
-      { icon: <FaIndustry />, name: "산업통상자원･중소기업" },
-      { icon: <FaGraduationCap />, name: "교육･여성가족･문화체육관광" },
-      { icon: <FaShieldAlt />, name: "국방･국가보훈" },
-      { icon: <FaUserTie />, name: "행정자치･인사･안전" },
-      { icon: <FaTractor />, name: "농림축산･산림･해양수산" },
-      { icon: <FaHeartbeat />, name: "보건복지･식품의약품" },
-      { icon: <FaTree />, name: "환경･고용노동" },
-      { icon: <FaRoad />, name: "국토교통" },
+      { icon: <FaScroll />, name: "법령 문서" },
+      { icon: <FaTools  />, name: "제품 메뉴얼" },
+      // { icon: <FaGraduationCap />, name: "교육･여성가족･문화체육관광" },
+      // { icon: <FaShieldAlt />, name: "국방･국가보훈" },
+      // { icon: <FaUserTie />, name: "행정자치･인사･안전" },
+      // { icon: <FaTractor />, name: "농림축산･산림･해양수산" },
+      // { icon: <FaHeartbeat />, name: "보건복지･식품의약품" },
+      // { icon: <FaTree />, name: "환경･고용노동" },
+      // { icon: <FaRoad />, name: "국토교통" },
       { icon: <FaEllipsisH />, name: "기타" },
     ],
     []
