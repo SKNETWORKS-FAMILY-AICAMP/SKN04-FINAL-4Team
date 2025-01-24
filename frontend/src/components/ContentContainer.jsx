@@ -60,7 +60,8 @@ function ContentContainer({
             searchConfig.requireCategory === 1 && selectedCategory === null
           }
         />
-        <SearchButton onClick={handleSearch} disabled={isLoading || inputValue.trim() === ''}>
+        {/* disabled={isLoading || inputValue.trim() === ''} */}
+        <SearchButton onClick={handleSearch} >
           {isLoading ? '검색 중...' : '검색'}
         </SearchButton>
       </SearchContainer>
@@ -295,7 +296,8 @@ const SearchInput = styled.input`
 `;
 
 const SearchButton = styled.button`
-  padding: 0 28px;
+  
+  width: 95px;
   height: 48px;
   font-size: 15px;
   font-weight: 600;
@@ -314,5 +316,11 @@ const SearchButton = styled.button`
 
   &:active {
     transform: translateY(0);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.5;
+    background: var(--button-bg-color, #025ce2);
   }
 `;
