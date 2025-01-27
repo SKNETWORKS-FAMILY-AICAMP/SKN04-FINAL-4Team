@@ -48,15 +48,9 @@ def rewrite_query(state: State, llm, config: RunnableConfig):
 
 def get_prompt():
     final_prompt = """
-    너는 내용을보고 질문에 대해 답에대한 추론을하고 답을 내는 역할이야. 답은 반드시 한국어로 해줘
-    답의 형식은 아래와같아
-    ##추론:
+    ## 내용: {context}
 
-    ##답:
------------------------------------------------------------------------------------
-    ##내용: {context}
-
-    ##질문: {question}
+    ## 질문: {question}
     """
     return final_prompt
 
@@ -107,7 +101,6 @@ def route_query(state: State, llm, config: RunnableConfig):
     # state["domain"] = domain_str
     return State(domain=domain_str)
 
-
 def ensemble_search(query, chroma_retriever, bm25_retriever, alpha=0.5, k=3):
     # Chroma 검색
     chroma_results = chroma_retriever.get_relevant_documents(query)
@@ -145,6 +138,14 @@ def retrieve_document_law(state: State, law_retriever, bm25_retriever, config: R
 
     chunk = AIMessageChunk(content=retrieved_content)
     return State(context=chunk)
+
+def ensemble_retriever(state: State, retriever, config: RunnableConfig):
+    question = state["question"][-1].content
+
+    result = retriever.invoke(question)
+    docs = '\n'.join([doc.page_content for doc in result])
+
+    return State(context=docs)
 
 def retrieve_document_manual(state: State, manual_retriever, bm25_retriever, config: RunnableConfig, alpha=0.7, k=3):
     # 사용자 질문 추출
