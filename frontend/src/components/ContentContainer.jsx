@@ -32,12 +32,25 @@ function ContentContainer({
             {categories[selectedCategory].name}
           </SelectedCategory>
         )}
-
-        <ChatContainer>
-          {(htmlContent !== null && htmlContent.length !== 0) && (
-            <div dangerouslySetInnerHTML={{ __html: htmlContent }}></div>
-            )}
-        </ChatContainer>
+      <CategoryGrid>
+          {categories.map((category, index) => (
+            <CategoryButton
+              key={index}
+              onClick={() => handleCategoryClick(index)}
+              isSelected={selectedCategory === index}
+            >
+              <IconWrapper isSelected={selectedCategory === index}>
+                {category.icon}
+              </IconWrapper>
+              <CategoryName>{category.name}</CategoryName>
+            </CategoryButton>
+          ))}
+      </CategoryGrid>
+      <ChatContainer>
+        {(htmlContent !== null && htmlContent.length !== 0) && (
+          <div dangerouslySetInnerHTML={{ __html: htmlContent }}></div>
+          )}
+      </ChatContainer>
       </ScrollableContent>
 
       <SearchContainer>
@@ -60,7 +73,8 @@ function ContentContainer({
             searchConfig.requireCategory === 1 && selectedCategory === null
           }
         />
-        <SearchButton onClick={handleSearch} disabled={isLoading || inputValue.trim() === ''}>
+        {/* disabled={isLoading || inputValue.trim() === ''} */}
+        <SearchButton onClick={handleSearch} >
           {isLoading ? '검색 중...' : '검색'}
         </SearchButton>
       </SearchContainer>
@@ -295,7 +309,8 @@ const SearchInput = styled.input`
 `;
 
 const SearchButton = styled.button`
-  padding: 0 28px;
+  
+  width: 95px;
   height: 48px;
   font-size: 15px;
   font-weight: 600;
@@ -314,5 +329,11 @@ const SearchButton = styled.button`
 
   &:active {
     transform: translateY(0);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.5;
+    background: var(--button-bg-color, #025ce2);
   }
 `;
