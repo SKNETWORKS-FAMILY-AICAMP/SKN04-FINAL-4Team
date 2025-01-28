@@ -46,20 +46,24 @@ def rewrite_query(state: State, llm, config: RunnableConfig):
     return State(question=new_query)
 
 
-def get_prompt():
-    final_prompt = """
-    ## 내용: {context}
+def get_prompt(context, question):
+    messages = [
+        ("system", """너는 내용만을보고 질문대해 추론하고 그에대한 답을하는 역할이야. 반드시 한국어로만 대답해줘.
+        """),
+        ("human", 
+        f"""
+        ## 내용: {context}
 
-    ## 질문: {question}
-    """
-    return final_prompt
+        ## 질문: {question}
+        """),
+    ]
+    return messages
 
 def call_model(state: State, llm, config: RunnableConfig):
     question = state["question"][-1].content
     context = state["context"]
-    prompt = get_prompt()
-    final_prompt = prompt.format(context=context, question=question)
-    response = llm.invoke(final_prompt, config)
+    prompt = get_prompt(context, question)
+    response = llm.invoke(prompt, config)
     model_result = response
     return State(generation=model_result)
 
