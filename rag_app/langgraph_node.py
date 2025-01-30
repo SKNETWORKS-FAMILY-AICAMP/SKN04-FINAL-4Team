@@ -73,8 +73,8 @@ def get_routing_template():
     # Instruction:
         - 아래 질문이 'law'인지 'manual'인지 분류하세요.
         - 조건:
-            1. 법령, 조항, 규정과 관련된 경우 -> 'law'
-            2. 제품 사용 설명이나 기능과 관련된 경우 -> 'manual'
+            1. 법령, 조항, 규정, 법률과 관련된 경우 -> 'law'
+            2. 제품(예: 냉장고, 세타기, 에어컨, TV등..)의 사용 설명이나 기능과 관련된 경우 -> 'manual'
         - 출력은 반드시 소문자로 'law' 또는 'manual'만 작성하세요.
 
     # Output:
@@ -85,7 +85,13 @@ def get_routing_template():
         Query: 관세법제89조는 어떤 법이야?
         Answer: law
 
+        Query: 「약사법」 제50조제1항 본문의 “약국개설자 및 의약품판매업자”에 같은 법 제91조에 따라 설립된 “한국희귀ㆍ필수의약품센터”(이하 “의약품센터”라 함)가 포함되는지?
+        Answer: law
+
         Query: 이 제품의 사용법이 궁금해요.
+        Answer: manual
+
+        Query: 세탁기의 청소방법은 뭐야?
         Answer: manual
 
     Query: {query}
