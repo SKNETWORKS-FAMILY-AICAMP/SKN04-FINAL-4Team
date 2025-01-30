@@ -1,0 +1,13 @@
+chromadb
+fastapi==0.115.7
+langchain==0.3.16
+langchain_chroma==0.2.1
+langchain_core==0.3.32
+langchain_ollama==0.2.2
+langchain_openai==0.3.2
+langchain_teddynote==0.3.41
+langgraph==0.2.68
+python-dotenv==1.0.1
+uvicorn==0.34.0
+langchain-community==0.3.13
+sentence-transformers
