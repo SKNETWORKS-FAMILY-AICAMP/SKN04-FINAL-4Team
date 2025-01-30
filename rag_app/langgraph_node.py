@@ -49,6 +49,7 @@ def rewrite_query(state: State, llm, config: RunnableConfig):
 def get_prompt(context, question):
     messages = [
         ("system", """너는 내용만을보고 질문대해 추론하고 그에대한 답을하는 역할이야. 반드시 한국어로만 대답해줘.
+         내용이 없거나 질문이 내용과 관련이 없으면 해당 질문을 문서에서 찾을 수 없다고 알려줘.
         """),
         ("human", 
         f"""
