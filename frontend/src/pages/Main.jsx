@@ -241,7 +241,7 @@ function Main() {
 
       for (let i = 0; i< localHistoryRef.current.length; i++) {
         if (localHistoryRef.current[i].id === currentChatId.current) {
-          patchHistory(title, historyMessages.current, currentChatId.current);
+          patchHistory(title, localHistoryRef.current, currentChatId.current);
           break;
         }
       }
@@ -252,7 +252,8 @@ function Main() {
     if (isLoading.current) return;
     isLoading.current = true;
     try {
-      ws.current = new WebSocket("ws://127.0.0.1:8002/ws/query");
+      const API_URL = process.env.REACT_APP_MODEL_API_SERVER;
+      ws.current = new WebSocket(`${API_URL}`);
       ws.current.onerror = (error) => {
         console.error('WebSocket 에러:', error);
         setRecvMessages((prevMessages) => prevMessages + `<div class="human-message">커넥션 실패. 서버를 확인해주세요.</div>`);
@@ -271,20 +272,20 @@ function Main() {
       // 사용자 쿼리를 서버에 전송
       const query = { query: inputValue };
       ws.current.send(JSON.stringify(query));
-      setRecvMessages((prevMessages) => prevMessages + `<div class="human-message">${inputValue}</div>`);
-      historyMessages.current += `<div class="human-message">${inputValue}</div>`;
+      setRecvMessages((prevMessages) => prevMessages + `<div class="human-message">${inputValue}</div>\n`);
+      historyMessages.current += `<div class="human-message">${inputValue}</div>\n`;
       historytitle.current = inputValue
       setInputValue(''); // 입력 필드 초기화
 
     ws.current.onmessage = (event) => {
       if (event.data === '=== Start ===') {
-        setRecvMessages((prevMessages) => prevMessages + `<div class="ai-message">`);
-        historyMessages.current += `<div class="ai-message">`;
+        setRecvMessages((prevMessages) => prevMessages + `\n<div class="ai-message">\n\n`);
+        historyMessages.current += `\n<div class="ai-message">\n\n`;
         return;
       }
       if (event.data.trim() === '=== Done ===') {
-        setRecvMessages((prevMessages) => prevMessages + `</div>`);
-        historyMessages.current += `</div>`;
+        setRecvMessages((prevMessages) => prevMessages + `</div>\n`);
+        historyMessages.current += `</div>\n`;
         isLoading.current = false;
         saveHistory()
         ws.current.close(); // 연결 종료
