@@ -32,6 +32,7 @@ async def query_websocket(websocket: WebSocket):
 
         inputs = State(question=user_query)
         node_names = ["LLM"]
+        await websocket.send_text("=== Start ===")
         for chunk_msg, metadata in graph.stream(inputs, config, stream_mode="messages"):
             curr_node = metadata["langgraph_node"]
             if not node_names or curr_node in node_names:
