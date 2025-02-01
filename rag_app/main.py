@@ -49,4 +49,4 @@ async def query_websocket(websocket: WebSocket):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8002, reload=False, workers=1)
+    uvicorn.run(app, host="0.0.0.0", port=9779, reload=False, workers=1)
