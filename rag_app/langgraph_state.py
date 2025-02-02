@@ -9,3 +9,4 @@ class State(TypedDict):
     generation: Annotated[str, "LLM generated answer"]
     # messages: Annotated[list, add_messages]
     domain: Annotated[str, "Domain"]
+    filter: Annotated[str, "Filter"]

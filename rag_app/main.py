@@ -29,7 +29,8 @@ async def query_websocket(websocket: WebSocket):
             recursion_limit=10,  # 최대 10개의 노드까지 방문. 그 이상은 RecursionError 발생
             configurable={"thread_id": thread_id},  # 스레드 ID 설정
         )
-
+        filter = data.get("filter", "-1")
+        inputs = State(question=user_query, filter=filter)
         inputs = State(question=user_query)
         node_names = ["LLM"]
         await websocket.send_text("=== Start ===")
