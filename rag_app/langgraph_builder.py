@@ -82,7 +82,7 @@ class GraphBuilder():
         self.rewriter_llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0)
         self.routing_llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0)
         ## 모델이 올라마에 정상적으로 올라가있는지 확인하기
-        self.final_llm = ChatOllama(model="qa_law_v2:latest", top_k=5, repeat_penalty=1.2, temperature=0.1, num_predict=2048)
+        self.final_llm = ChatOllama(model="qa_law_v2:latest", top_k=2, repeat_penalty=1.2, temperature=0, num_predict=2048)
         print("모델 로드완료")
 
     def __add_nodes_to_graph(self):
@@ -114,7 +114,7 @@ class GraphBuilder():
             ("LLM", END)
         ]
         conditional_edges = [
-            ("RouteDomain", domain_condition, {"law": "RetrieveLaw", "manual": "RetrieveManual"}),
+            ("RouteDomain", domain_condition, {"law": "RetrieveLaw", "manual": "RetrieveManual", "none": "LLM"}),
         ]
 
         for fr, to in edges:

@@ -64,7 +64,7 @@ def rewrite_query(state: State, llm, config: RunnableConfig):
 
 def get_prompt(context, question):
     messages = [
-        ("system", """너는 내용만을보고 질문대해 추론을하고 그에대한 답을하는 역할이야. 반드시 한국어로만 대답해줘.
+        ("system", """너는 내용만을보고 질문대해 추론을하고 그에대한 답을하는 역할이야. 반드시 한국어로만 대답해줘. 질문과 관련없는 내용은 빼고 답해줘.
         출력은 마크다운 형식으로 출력하되 코드출력형식을 제외하고 해줘 .
          내용이 없거나 질문이 내용과 관련이 없으면 해당 질문을 문서에서 찾을 수 없다고 알려줘.
         """),
@@ -82,9 +82,11 @@ def call_model(state: State, llm, config: RunnableConfig):
     context = state.get("context", "")
     print(context)
     prompt = get_prompt(context, question)
-    response = llm.invoke(prompt, config)
+    state['messages'].extend(prompt)
+    input = state['messages'][-5:]
+    response = llm.invoke(input, config)
     model_result = response
-    return State(generation=model_result)
+    return State(messages=model_result)
 
 
 def get_routing_template():
