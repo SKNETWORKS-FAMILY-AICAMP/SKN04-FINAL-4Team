@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import styled from "styled-components";
 import '../style.css';
 import {marked} from "marked";
@@ -19,6 +19,14 @@ function ContentContainer({
   recv,
   isLoading,
 }) {
+  const inputRef = useRef(null);
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+    }
+  }, [inputValue]);
+
   let htmlContent="";
   if (recv !==null && recv.length !== 0) {
     htmlContent = marked(recv);
@@ -60,7 +68,8 @@ function ContentContainer({
           </ResetButton>
         </ButtonContainer>
         <SearchInput
-          type="text"
+          as="textarea"
+          ref={inputRef}
           placeholder={
             searchConfig.requireCategory === 1 && selectedCategory === null
               ? "카테고리를 먼저 선택해주세요"
@@ -72,6 +81,7 @@ function ContentContainer({
           disabled={
             searchConfig.requireCategory === 1 && selectedCategory === null
           }
+          spellCheck={false}
         />
         {/* disabled={isLoading || inputValue.trim() === ''} */}
         <SearchButton onClick={handleSearch} >
@@ -98,6 +108,7 @@ const ScrollableContent = styled.div`
   padding: 24px;
   display: flex;
   flex-direction: column;
+  align-items: center;
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -136,7 +147,7 @@ const CategoryGrid = styled.div`
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   margin-bottom: 24px;
-  max-width: 900px;
+  max-width: 750px;
   margin-left: auto;
   margin-right: auto;
   width: 100%;
@@ -180,7 +191,7 @@ const CategoryName = styled.span`
 const ChatContainer = styled.div`
   flex: 1;
   margin-top: 20px;
-  max-width: 900px;
+  max-width: 750px;
   margin-left: auto;
   margin-right: auto;
   width: 100%;
@@ -239,11 +250,13 @@ const AnswerText = styled.div`
 
 const SearchContainer = styled.div`
   display: flex;
-  align-items: center;
+  max-width: 750px;
+  align-items: flex-end;
   justify-content: center;
+  align-self: center;
+  width: 100%;
   gap: 16px;
-  width: fit-content;
-  margin: 0 auto;
+  margin: 0 0;
   padding: 24px;
 `;
 
@@ -281,11 +294,17 @@ const ResetIcon = styled.span`
   color: white;
 `;
 
-const SearchInput = styled.input`
-  width: 500px;
-  height: 48px;
+const SearchInput = styled.textarea`
+  flex: 6;
+  width: 100%;
+  max-width: 500px;
+  min-height: 48px;
+  max-height: 200px;
   padding: 0 20px;
   font-size: 15px;
+  resize: none;
+  overflow: auto;
+  align-content: center;
   color: #334155;
   background-color: #f8fafc;
   border: 2px solid #e2e8f0;
@@ -305,6 +324,18 @@ const SearchInput = styled.input`
   &:disabled {
     background-color: #f3f4f6;
     cursor: not-allowed;
+  }
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 4px;
   }
 `;
 
