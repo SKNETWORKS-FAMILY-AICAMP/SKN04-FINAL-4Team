@@ -51,6 +51,7 @@ function Main() {
   const historytitle = useRef("")
   const currentChatId = useRef(null)
   const localHistoryRef = useRef([]);
+  const currentThredId = useRef(null)
 
   // 검색 조건 (0일 땐 카테고리 선택 없이도 검색 가능)
   const searchConfig = {
@@ -132,14 +133,14 @@ function Main() {
     []
   );
 
-  const postHistory = async (title, content) => {
+  const postHistory = async (title, content, thread_id) => {
     try {
       const API_URL = process.env.REACT_APP_API_SERVER;
       const token = localStorage.getItem('accessToken');
       console.log(token)
       const response = await axios.post(
         `${API_URL}/history/`,
-        {"title":title, "data":content},
+        {"title":title, "data":content, "thread_id":thread_id},
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -216,6 +217,28 @@ function Main() {
       throw error;
     }
   };
+
+  const deleteThread = async (id) => {
+    try {
+      const API_URL = process.env.REACT_APP_API_SERVER;
+      const token = localStorage.getItem('accessToken');
+      const response = await axios.post(
+        `${API_URL}/delete_thread/`,
+        {"thread_id": id},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log(response)
+      return response.data;
+    } catch (error) {
+      console.error('DB delete fail', error);
+      throw error;
+    }
+  }
+
   useEffect(() => {
         
   },[recvMessages]);
@@ -223,7 +246,7 @@ function Main() {
   const saveHistory = () => {
     const title = historytitle.current.slice(0, 50)
     if (!currentChatId.current) {
-      postHistory(title, historyMessages.current).then(res =>{
+      postHistory(title, historyMessages.current, currentThredId.current).then(res =>{
         console.log(res)
         currentChatId.current = res.id
         // setCurrentChatId(res.id);
@@ -241,7 +264,7 @@ function Main() {
 
       for (let i = 0; i< localHistoryRef.current.length; i++) {
         if (localHistoryRef.current[i].id === currentChatId.current) {
-          patchHistory(title, historyMessages.current, currentChatId.current);
+          patchHistory(title, localHistoryRef.current, currentChatId.current);
           break;
         }
       }
@@ -252,7 +275,8 @@ function Main() {
     if (isLoading.current) return;
     isLoading.current = true;
     try {
-      ws.current = new WebSocket("ws://127.0.0.1:8002/ws/query");
+      const API_URL = process.env.REACT_APP_MODEL_API_SERVER;
+      ws.current = new WebSocket(`${API_URL}`);
       ws.current.onerror = (error) => {
         console.error('WebSocket 에러:', error);
         setRecvMessages((prevMessages) => prevMessages + `<div class="human-message">커넥션 실패. 서버를 확인해주세요.</div>`);
@@ -269,22 +293,30 @@ function Main() {
     
     ws.current.onopen = () => {
       // 사용자 쿼리를 서버에 전송
-      const query = { query: inputValue };
+      const query = { query: inputValue, filter: selectedCategory, thread_id: currentThredId.current};
       ws.current.send(JSON.stringify(query));
-      setRecvMessages((prevMessages) => prevMessages + `<div class="human-message">${inputValue}</div>`);
-      historyMessages.current += `<div class="human-message">${inputValue}</div>`;
+      setRecvMessages((prevMessages) => prevMessages + `<div class="human-message">${inputValue}</div>\n`);
+      historyMessages.current += `<div class="human-message">${inputValue}</div>\n`;
       historytitle.current = inputValue
       setInputValue(''); // 입력 필드 초기화
-
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 100);
     ws.current.onmessage = (event) => {
       if (event.data === '=== Start ===') {
-        setRecvMessages((prevMessages) => prevMessages + `<div class="ai-message">`);
-        historyMessages.current += `<div class="ai-message">`;
+        setRecvMessages((prevMessages) => prevMessages + `\n<div class="ai-message">\n\n`);
+        historyMessages.current += `\n<div class="ai-message">\n\n`;
+        return;
+      }
+      else if (event.data.includes('=== Thread_Id ===')) {
+        currentThredId.current = event.data.split(':')[1]
         return;
       }
       if (event.data.trim() === '=== Done ===') {
-        setRecvMessages((prevMessages) => prevMessages + `</div>`);
-        historyMessages.current += `</div>`;
+        setRecvMessages((prevMessages) => prevMessages + `</div>\n`);
+        historyMessages.current += `</div>\n`;
         isLoading.current = false;
         saveHistory()
         ws.current.close(); // 연결 종료
@@ -357,7 +389,14 @@ function Main() {
   // 검색(Enter) 이벤트
   const handleKeyPress = useCallback(
     (e) => {
-      if (e.key === "Enter" && inputValue.trim() && isLoading.current !==true) {
+      if (e.key === "Enter" && e.shifkey){
+        return;
+      }
+      else if (e.key === "Enter" && inputValue.trim() && isLoading.current !==true) {
+        if (e.shiftKey) {
+          return;
+        }
+        e.preventDefault();
         handleSearch();
       }
     },
@@ -371,6 +410,7 @@ function Main() {
     (item) => {
       currentChatId.current = item.id
       // setCurrentChatId(item.id);
+      currentThredId.current = item.thread_id
       const formattedMessages = item.data
 
       // setChatMessages(formattedMessages);
@@ -395,6 +435,7 @@ function Main() {
     historyMessages.current = "";
     setSelectedCategory(null);
     currentChatId.current = null
+    currentThredId.current = null
     // setCurrentChatId(null);
   }, []);
 
@@ -411,6 +452,7 @@ function Main() {
     setSelectedCategory(null);
     setInputValue("");
     currentChatId.current = null
+    currentThredId.current = null
     // setCurrentChatId(null);
   }, []);
 
@@ -424,10 +466,11 @@ function Main() {
 
   // 히스토리에서 특정 채팅 삭제
   const handleDeleteHistory = useCallback(
-    async (chatId, e) => {
+    async (chatId, thread_id, e) => {
       e.stopPropagation();
       try {
         await deleteHistory(chatId);
+        await deleteThread(thread_id);
         const response = await getHistory();
         setLocalHistory(response);
         localHistoryRef.current = response
@@ -435,6 +478,7 @@ function Main() {
         if (chatId === currentChatId.current) {
           setRecvMessages("");
           currentChatId.current = null
+          currentThredId.current = null
           // setCurrentChatId(null);
           historyMessages.current = "";
         }

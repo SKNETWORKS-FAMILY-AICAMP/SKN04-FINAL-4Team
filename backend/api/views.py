@@ -7,9 +7,13 @@ from history.models import DialogHistory
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
 # Create your views here.
 from sllm_poject.settings import DEBUG
 from rest_framework_simplejwt.views import TokenObtainPairView
+import psycopg2
+from django.http import JsonResponse
+import os
 
 
 class HistoryList(generics.ListAPIView):
@@ -57,3 +61,37 @@ class HistoryList(generics.ListAPIView):
 
 class UserTokenObtainPairView(TokenObtainPairView):
     pass
+
+
+class DeleteThreadId(APIView):
+    if DEBUG:
+        permission_classes = [AllowAny]
+    else:
+        permission_classes = [IsAuthenticated]
+    def post(self, request):
+        try:
+            thread_id = request.data.get("thread_id")
+            DB_USERNAME = os.environ.get('SQL_USER')
+            DB_PASSWORD = os.environ.get('SQL_PASSWORD')
+            DB_HOST = os.environ.get('SQL_HOST')
+            DB_PORT = os.environ.get('SQL_PORT')
+            DB_NAME = os.environ.get('SQL_DATABASE')
+            conn = psycopg2.connect(
+                dbname=DB_NAME,
+                user=DB_USERNAME,
+                password=DB_PASSWORD,
+                host=DB_HOST,
+                port=DB_PORT
+            )
+            
+            cur = conn.cursor()
+            cur.execute("DELETE FROM checkpoint_blobs WHERE thread_id = %s", (str(thread_id),))
+            cur.execute("DELETE FROM checkpoint_writes WHERE thread_id = %s", (str(thread_id),))
+            cur.execute("DELETE FROM checkpoints WHERE thread_id = %s", (str(thread_id),))
+            conn.commit()
+
+            cur.close()
+            conn.close()
+            return JsonResponse({"message": "삭제 성공"}, status=200)
+        except:
+            return JsonResponse({"message": "삭제 실패"}, status=400)

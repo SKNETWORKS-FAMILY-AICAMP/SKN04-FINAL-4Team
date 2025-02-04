@@ -31,6 +31,22 @@ def get_rewrite_template():
         Query: 기후 변화가 북극곰 개체 수에 미치는 영향은 무엇인가요?
         Answer: 기후 변화가 북극곰 개체 수에 끼치는 영향은?
 
+    # Eception:
+        질문이 말이 안되는 경우 재작성 하지 않고 원본 그대로 출력합니다.
+    
+        예시
+        입력:
+        "ㅁㅁㄴㅇㄻㄴㅇ"
+        
+        입력:
+        "ㅁㅁㄴㄴㅁㅇ?"
+    
+        입력:
+        "뫌뭮브ㅞㅁ"
+    
+        입력:
+        "asdfixcvkasdf"
+    
     Query: {query}
     Answer:
     """
@@ -46,22 +62,31 @@ def rewrite_query(state: State, llm, config: RunnableConfig):
     return State(question=new_query)
 
 
-def get_prompt():
-    final_prompt = """
-    ## 내용: {context}
+def get_prompt(context, question):
+    messages = [
+        ("system", """너는 내용만을보고 질문대해 추론을하고 그에대한 답을하는 역할이야. 반드시 한국어로만 대답해줘. 질문과 관련없는 내용은 빼고 답해줘.
+        출력은 마크다운 형식으로 출력하되 코드출력형식을 제외하고 해줘 .
+         내용이 없거나 질문이 내용과 관련이 없으면 해당 질문을 문서에서 찾을 수 없다고 알려줘.
+        """),
+        ("human", 
+        f"""
+        ## 내용: {context}
 
-    ## 질문: {question}
-    """
-    return final_prompt
+        ## 질문: {question}
+        """),
+    ]
+    return messages
 
 def call_model(state: State, llm, config: RunnableConfig):
     question = state["question"][-1].content
-    context = state["context"]
-    prompt = get_prompt()
-    final_prompt = prompt.format(context=context, question=question)
-    response = llm.invoke(final_prompt, config)
+    context = state.get("context", "")
+    print(context)
+    prompt = get_prompt(context, question)
+    state['messages'].extend(prompt)
+    input = state['messages'][-5:]
+    response = llm.invoke(input, config)
     model_result = response
-    return State(generation=model_result)
+    return State(messages=model_result)
 
 
 def get_routing_template():
@@ -69,21 +94,37 @@ def get_routing_template():
     # Instruction:
         - 아래 질문이 'law'인지 'manual'인지 분류하세요.
         - 조건:
-            1. 법령, 조항, 규정과 관련된 경우 -> 'law'
-            2. 제품 사용 설명이나 기능과 관련된 경우 -> 'manual'
-        - 출력은 반드시 소문자로 'law' 또는 'manual'만 작성하세요.
+            1. 법령, 조항, 규정, 법률과 관련된 경우 -> 'law'
+            2. 제품(예: 냉장고, 세타기, 에어컨, TV등..)의 사용 설명이나 기능과 관련된 경우 -> 'manual'
+            3. 말이 안되는 질문일경우이거나 1번2번이 아닌경우 -> 'none'
+        - 출력은 반드시 소문자로 'law', 'manual', 'none'만 작성하세요.
 
     # Output:
         - 입력 질문의 분류 결과를 출력합니다.
-        - 추가 설명 없이 'law' 또는 'manual'만 출력합니다.
+        - 추가 설명 없이 'law', 'manual', none만 출력합니다.
 
     # Example:
         Query: 관세법제89조는 어떤 법이야?
         Answer: law
 
+        Query: 「약사법」 제50조제1항 본문의 “약국개설자 및 의약품판매업자”에 같은 법 제91조에 따라 설립된 “한국희귀ㆍ필수의약품센터”(이하 “의약품센터”라 함)가 포함되는지?
+        Answer: law
+
         Query: 이 제품의 사용법이 궁금해요.
         Answer: manual
 
+        Query: 세탁기의 청소방법은 뭐야?
+        Answer: manual
+
+        Query: =ㅁㄴㅇㄹ
+        Answer: none
+        
+        Query: ㅁㄴㅇ러ㅏ팇퍼ㅜㅏㅣㅁㄴ우리ㅏㅜ
+        Answer: none
+        
+        Query: ?!2[?#[[]?
+        Answer: none
+        
     Query: {query}
     Answer:
     """
@@ -94,9 +135,16 @@ def route_query(state: State, llm, config: RunnableConfig):
     user_query = state["question"][-1].content  # 마지막 사용자 질문
     routing_prompt = get_routing_template()
     final_prompt = routing_prompt.format(query=user_query)
-    llm_output = llm.invoke(final_prompt, config).content
-    domain_str = llm_output.strip().lower()  # 예: "law" 혹은 "manual"
-    
+    filter = state["filter"]
+    domain_str = ""
+    if filter == "0":
+        domain_str = "law"
+    elif filter == "1":
+        domain_str = "manual"
+    else:
+        llm_output = llm.invoke(final_prompt, config).content
+        domain_str = llm_output.strip().lower()  # 예: "law" 혹은 "manual"
+
     # 3) state["domain"] 에 결과 저장
     # state["domain"] = domain_str
     return State(domain=domain_str)

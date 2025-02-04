@@ -42,6 +42,7 @@ class GraphBuilder():
         )
         embedding_function = ChromaEmbeddingFunction(base_embeddings)
         top_k = 5
+        top_k_manual = 1
         print(f'크로마 리트리버 생성중...')
         self.law_db = Chroma(collection_name='full_law_db', client=self.chroma_client,embedding_function=embedding_function)
         self.law_retriever = self.law_db.as_retriever(
@@ -49,7 +50,7 @@ class GraphBuilder():
         )
         self.manual_db = Chroma(collection_name='manual_db', client=self.chroma_client,embedding_function=embedding_function)
         self.manual_retriever = self.manual_db.as_retriever(
-            search_kwargs={"k": top_k},
+            search_kwargs={"k": top_k_manual},
         )
         print(f'크로마 리트리버 생성완료.')
 
@@ -60,10 +61,10 @@ class GraphBuilder():
         self.bm25_law_retriever.k = top_k
         documents = [Document(page_content=doc) for doc in self.manual_db._collection.get().get("documents")]
         self.bm25_manual_retriever = KiwiBM25Retriever.from_documents(documents)
-        self.bm25_manual_retriever.k = top_k
+        self.bm25_manual_retriever.k = top_k_manual
         print("BM25 리트리버 생성완료.")
-        law_weight = 0.7
-        law_bm25_weight = 0.3
+        law_weight = 0.6
+        law_bm25_weight = 0.4
 
         self.law_ensemble_retriever = EnsembleRetriever(
             retrievers=[self.law_retriever, self.bm25_law_retriever],
@@ -71,7 +72,7 @@ class GraphBuilder():
         )
 
         self.manual_ensemble_retriever = EnsembleRetriever(
-            retrievers=[self.bm25_law_retriever, self.bm25_manual_retriever],
+            retrievers=[self.manual_retriever, self.bm25_manual_retriever],
             weights=[law_weight, law_bm25_weight],
         )
 
@@ -81,7 +82,7 @@ class GraphBuilder():
         self.rewriter_llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0)
         self.routing_llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0)
         ## 모델이 올라마에 정상적으로 올라가있는지 확인하기
-        self.final_llm = ChatOllama(model="qa_law_v1:latest", num_thread=12, top_k=5, repeat_penalty=1.2, temperature=0.1, num_predict=254) 
+        self.final_llm = ChatOllama(model="qa_law_v2:latest", top_k=2, repeat_penalty=1.2, temperature=0, num_predict=2048)
         print("모델 로드완료")
 
     def __add_nodes_to_graph(self):
@@ -95,7 +96,7 @@ class GraphBuilder():
             ),
             "RetrieveManual": (
                 ensemble_retriever,
-                {"retriever": self.law_ensemble_retriever}
+                {"retriever": self.manual_ensemble_retriever}
             ),
             "LLM": (call_model, {"llm": self.final_llm}),
         }
@@ -113,7 +114,7 @@ class GraphBuilder():
             ("LLM", END)
         ]
         conditional_edges = [
-            ("RouteDomain", domain_condition, {"law": "RetrieveLaw", "manual": "RetrieveManual"}),
+            ("RouteDomain", domain_condition, {"law": "RetrieveLaw", "manual": "RetrieveManual", "none": "LLM"}),
         ]
 
         for fr, to in edges:

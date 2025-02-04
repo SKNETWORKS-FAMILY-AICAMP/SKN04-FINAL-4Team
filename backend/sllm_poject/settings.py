@@ -32,7 +32,10 @@ if os.environ.get('DJANGO_ALLOWED_HOSTS'):
 else:
     ALLOWED_HOSTS = []
 
-
+if os.environ.get('CSRF_TRUSTED_ORIGINS'):
+    CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS').split(' ')
+else:
+    CSRF_TRUSTED_ORIGINS = []
 # Application definition
 
 INSTALLED_APPS = [
