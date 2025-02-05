@@ -81,7 +81,7 @@
 </details>
 
 <details>
-<summary>2. Rag Application</summary>
+<summary>2. Rag Application 구축</summary>
 
 - Vector DB<br>
     <img src="./images/rag1.png"><br>
